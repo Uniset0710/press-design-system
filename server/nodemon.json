@@ -1,0 +1,5 @@
+{
+  "watch": ["src"],
+  "ignore": ["database.sqlite", "src/**/*.sqlite"],
+  "ext": "ts,json"
+} 
