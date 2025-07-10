@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import TreeView, { PressNode, Part } from "./components/TreeView";
 import ChecklistItemComponent from "../components/ChecklistItemComponent";
 import { v4 as uuid } from 'uuid';
@@ -595,6 +595,20 @@ export default function Home() {
     XLSX.writeFile(wb, `${sectionTitle.replace(/\s+/g, '_')}_checklist.xlsx`);
   }
 
+  const filteredTreeData = useMemo(() => {
+    return treeData
+      .map(node => ({
+        ...node,
+        assemblies: node.assemblies
+          .map(asm => ({
+            ...asm,
+            parts: asm.parts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+          }))
+          .filter(asm => asm.name.toLowerCase().includes(searchTerm.toLowerCase()) || asm.parts.length > 0)
+      }))
+      .filter(node => node.name.toLowerCase().includes(searchTerm.toLowerCase()) || node.assemblies.length > 0);
+  }, [treeData, searchTerm]);
+
   return (
     <div className="flex min-h-screen">
       {error && (
@@ -624,19 +638,7 @@ export default function Home() {
               </button>
             </div>
             <TreeView
-              data={
-                treeData
-                  .map(node => ({
-                    ...node,
-                    assemblies: node.assemblies
-                      .map(asm => ({
-                        ...asm,
-                        parts: asm.parts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      }))
-                      .filter(asm => asm.name.toLowerCase().includes(searchTerm.toLowerCase()) || asm.parts.length > 0)
-                  }))
-                  .filter(node => node.name.toLowerCase().includes(searchTerm.toLowerCase()) || node.assemblies.length > 0)
-              }
+              data={filteredTreeData}
               selectedPartId={selectedPartId}
               editMode={isEditMode}
               onSelectPart={handlePartSelect}
@@ -964,7 +966,7 @@ export default function Home() {
                               <tr className="bg-blue-100">
                                 <th className="border px-2 py-1 min-w-[60px] sm:min-w-[80px] md:min-w-[100px]">작업 이름</th>
                                 <th
-                                  className="border px-2 py-1 whitespace-nowrap min-w-[60px] sm:min-w-[80px] md:min-w-[100px] text-center cursor-pointer select-none"
+                                  className="border px-2 py-1 whitespace-nowrap min-w-[100px] w-[100px] max-w-[120px] text-center cursor-pointer select-none"
                                   onClick={() => setSectionSort(s => {
                                     const prev = s[sec.title];
                                     let nextOrder: 'asc' | 'desc' = 'asc';
@@ -976,7 +978,7 @@ export default function Home() {
                                   {sortState?.column === 'author' && (sortState.order === 'asc' ? ' ▲' : ' ▼')}
                                 </th>
                                 <th
-                                  className="border px-2 py-1 whitespace-nowrap min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-center cursor-pointer select-none"
+                                  className="border px-2 py-1 whitespace-nowrap min-w-[120px] w-[120px] max-w-[140px] text-center cursor-pointer select-none"
                                   onClick={() => setSectionSort(s => {
                                     const prev = s[sec.title];
                                     let nextOrder: 'asc' | 'desc' = 'asc';
@@ -988,7 +990,7 @@ export default function Home() {
                                   {sortState?.column === 'dueDate' && (sortState.order === 'asc' ? ' ▲' : ' ▼')}
                                 </th>
                                 <th
-                                  className="border px-2 py-1 whitespace-nowrap min-w-[50px] sm:min-w-[60px] md:min-w-[80px] text-center cursor-pointer select-none"
+                                  className="border px-2 py-1 whitespace-nowrap min-w-[80px] w-[80px] max-w-[100px] text-center cursor-pointer select-none"
                                   onClick={() => setSectionSort(s => {
                                     const prev = s[sec.title];
                                     let nextOrder: 'asc' | 'desc' = 'asc';
@@ -1000,7 +1002,7 @@ export default function Home() {
                                   {sortState?.column === 'category' && (sortState.order === 'asc' ? ' ▲' : ' ▼')}
                                 </th>
                                 <th
-                                  className="border px-2 py-1 whitespace-nowrap min-w-[50px] sm:min-w-[60px] md:min-w-[80px] text-center cursor-pointer select-none"
+                                  className="border px-2 py-1 whitespace-nowrap min-w-[80px] w-[80px] max-w-[100px] text-center cursor-pointer select-none"
                                   onClick={() => setSectionSort(s => {
                                     const prev = s[sec.title];
                                     let nextOrder: 'asc' | 'desc' = 'asc';
@@ -1011,22 +1013,18 @@ export default function Home() {
                                   중요도
                                   {sortState?.column === 'priority' && (sortState.order === 'asc' ? ' ▲' : ' ▼')}
                                 </th>
-                                <th className="border px-2 py-1 whitespace-nowrap min-w-[40px] sm:min-w-[60px] md:min-w-[80px] text-center">첨부</th>
+                                <th className="border px-2 py-1 whitespace-nowrap min-w-[60px] w-[60px] max-w-[80px] text-center">첨부</th>
                               </tr>
                             </thead>
                             <tbody>
                               {sortedItems.filter(item => filteredItems.includes(item)).map(item => (
                                 <tr key={item.id} className="bg-white cursor-pointer hover:bg-blue-50" onClick={() => setModalItem(item)}>
                                   <td className="border px-2 py-1">{item.text || item.description}</td>
-                                  <td className="border px-2 py-1 whitespace-nowrap text-center">{item.author || '-'}</td>
-                                  <td className="border px-2 py-1 whitespace-nowrap text-center">{item.dueDate ? item.dueDate.slice(0, 10) : '-'}</td>
-                                  <td className="border px-2 py-1 whitespace-nowrap text-center">{(item as any).category || '-'}</td>
-                                  <td className="border px-2 py-1 whitespace-nowrap text-center">{(item as any).priority || '-'}</td>
-                                  <td className="border px-2 py-1 whitespace-nowrap text-center">
-                                    {item.attachments && item.attachments.length > 0 ? (
-                                      <span title="첨부파일 있음">📎 {item.attachments.length}</span>
-                                    ) : '-'}
-                                  </td>
+                                  <td className="border px-2 py-1 whitespace-nowrap text-center min-w-[100px] w-[100px] max-w-[120px]">{item.author || '-'}</td>
+                                  <td className="border px-2 py-1 whitespace-nowrap text-center min-w-[120px] w-[120px] max-w-[140px]">{item.dueDate ? item.dueDate.slice(0, 10) : '-'}</td>
+                                  <td className="border px-2 py-1 whitespace-nowrap text-center min-w-[80px] w-[80px] max-w-[100px]">{(item as any).category || '-'}</td>
+                                  <td className="border px-2 py-1 whitespace-nowrap text-center min-w-[80px] w-[80px] max-w-[100px]">{(item as any).priority || '-'}</td>
+                                  <td className="border px-2 py-1 whitespace-nowrap text-center min-w-[60px] w-[60px] max-w-[80px]">{item.attachments && item.attachments.length > 0 ? (<span title="첨부파일 있음">📎 {item.attachments.length}</span>) : '-'}</td>
                                 </tr>
                               ))}
                             </tbody>
