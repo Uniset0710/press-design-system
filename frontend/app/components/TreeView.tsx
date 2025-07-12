@@ -90,11 +90,11 @@ export default function TreeView({
       data.forEach(node => {
         node.assemblies.forEach(asm => {
           if (!(asm.id in next)) {
-            next[asm.id] = false; // Only initialize new assemblies as collapsed
+            next[asm.id] = false; // 새 어셈블리만 collapsed로 초기화
           }
         });
       });
-      // Remove assemblies that no longer exist
+      // 더 이상 존재하지 않는 어셈블리 제거
       Object.keys(next).forEach(id => {
         if (!data.some(node => node.assemblies.some(asm => asm.id === id))) {
           delete next[id];
@@ -102,7 +102,7 @@ export default function TreeView({
       });
       return next;
     });
-  }, [data]);
+  }, [data]); // data만 의존성으로 사용
 
   const toggleAssembly = (assemblyId: string) => {
     setAssemblyExpanded(prev => ({
@@ -159,7 +159,7 @@ export default function TreeView({
       }));
     }
 
-    // MC BLOCK(어셈블리)는 여러 개 열릴 수 있게
+    // MC BLOCK(어셈블리)는 여러 개 열릴 수 있게, 기존 상태 보존
     if (foundAssemblyId) {
       setAssemblyExpanded(prev => ({
         ...prev,
@@ -243,7 +243,7 @@ export default function TreeView({
       <li ref={setNodeRef} style={style} className={`flex items-center p-1 hover:bg-gray-100 rounded ${selectedPartId === part.id ? 'bg-blue-100' : ''}`}>
         {/* Drag handle */}
         <span {...attributes} {...listeners} className="cursor-move mr-2 select-none">≡</span>
-        <div className="flex-1 flex items-center justify-between" onClick={() => handleSelectPart(part)}>
+        <div className="flex-1 flex items-center justify-between" onClick={(e) => { e.stopPropagation(); handleSelectPart(part); }}>
           {isEditing ? (
             <div className="flex items-center gap-2 w-full" onClick={(e)=>e.stopPropagation()}>
               <input
