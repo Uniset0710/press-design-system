@@ -1,6 +1,43 @@
-# Getting Started with Create React App
+# Press Design System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+프레스 설계 시스템을 위한 React/Next.js 기반 웹 애플리케이션입니다.
+
+## 🚀 Features
+
+- **체크리스트 관리**: 작업 항목 생성, 수정, 필터링, 정렬
+- **트리 뷰**: 프레스 > 조립체 > 부품의 계층적 구조 표시
+- **첨부파일**: 작업 항목에 파일 첨부 기능
+- **실시간 검색**: 트리 뷰와 체크리스트 검색 기능
+- **반응형 디자인**: 모바일/데스크톱 지원
+
+## 🏗️ Architecture
+
+```
+press-design-system/
+├── frontend/           # Next.js 프론트엔드
+│   ├── app/           # Next.js App Router
+│   ├── components/    # React 컴포넌트
+│   │   ├── checklist/ # 체크리스트 관련 컴포넌트
+│   │   ├── tree/      # 트리 뷰 컴포넌트
+│   │   └── common/    # 공통 컴포넌트
+│   ├── hooks/         # 커스텀 훅
+│   ├── context/       # React Context
+│   └── types/         # TypeScript 타입 정의
+├── server/            # Express.js 백엔드
+│   ├── src/
+│   │   ├── routes/    # API 라우트
+│   │   ├── entities/  # TypeORM 엔티티
+│   │   └── middleware/# 미들웨어
+└── database.sqlite    # SQLite 데이터베이스
+```
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Express.js, TypeORM, SQLite
+- **Styling**: Tailwind CSS
+- **Testing**: Jest, React Testing Library
+- **State Management**: React Context API
 
 ## Available Scripts
 

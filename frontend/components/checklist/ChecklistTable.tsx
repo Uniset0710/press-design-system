@@ -2,11 +2,38 @@ import React from 'react';
 import { ChecklistItem } from '@/app/types/checklist';
 import ChecklistRow from './ChecklistRow';
 
+/**
+ * 체크리스트 아이템들을 테이블 형태로 표시하는 컴포넌트
+ * 
+ * @description
+ * - 체크리스트 아이템들을 테이블 형태로 렌더링합니다
+ * - 헤더 클릭으로 정렬 기능을 제공합니다
+ * - 각 행 클릭 시 상세 정보를 볼 수 있습니다
+ * - 반응형 디자인으로 모바일에서도 사용 가능합니다
+ * 
+ * @example
+ * ```tsx
+ * <ChecklistTable
+ *   items={checklistItems}
+ *   sectionTitle="My Section"
+ *   onSort={handleSort}
+ *   onItemClick={handleItemClick}
+ * />
+ * ```
+ */
 interface ChecklistTableProps {
+  /** 표시할 체크리스트 아이템 배열 */
   items: ChecklistItem[];
+  /** 섹션 제목 (정렬 시 식별자로 사용) */
   sectionTitle: string;
-  sortState?: { column: 'author' | 'dueDate' | 'category' | 'priority' | null, order: 'asc' | 'desc' };
+  /** 현재 정렬 상태 (선택사항) */
+  sortState?: { 
+    column: 'author' | 'dueDate' | 'category' | 'priority' | null; 
+    order: 'asc' | 'desc'; 
+  };
+  /** 정렬 이벤트 핸들러 */
   onSort: (sectionTitle: string, column: 'author' | 'dueDate' | 'category' | 'priority') => void;
+  /** 아이템 클릭 이벤트 핸들러 */
   onItemClick: (item: ChecklistItem) => void;
 }
 
