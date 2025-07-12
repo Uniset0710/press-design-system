@@ -16,12 +16,14 @@ router.get('/:itemId', async (req, res) => {
     // invalid itemId, return empty list
     return res.json([]);
   }
-  const attachments = await attachmentRepo.find({ where: { checklistItemId: itemId } });
+  const attachments = await attachmentRepo.find({
+    where: { checklistItemId: itemId },
+  });
   // return array of { id, uri, filename }
   const items = attachments.map(att => ({
     id: att.id,
     uri: `data:${att.mimeType};base64,${att.data.toString('base64')}`,
-    filename: att.filename
+    filename: att.filename,
   }));
   return res.json(items);
 });
@@ -37,7 +39,9 @@ router.post('/:itemId', upload.single('file'), async (req, res) => {
     }
 
     // checklist item 존재 여부 확인
-    const checklistItemRepo = AppDataSource.getRepository(require('../entities/ChecklistItem').ChecklistItem);
+    const checklistItemRepo = AppDataSource.getRepository(
+      require('../entities/ChecklistItem').ChecklistItem
+    );
     const checklistItem = await checklistItemRepo.findOneBy({ id: itemId });
     if (!checklistItem) {
       return res.status(404).json({ message: 'Checklist item not found' });
@@ -51,20 +55,24 @@ router.post('/:itemId', upload.single('file'), async (req, res) => {
       checklistItemId: itemId,
       filename: req.file.originalname,
       mimeType: req.file.mimetype,
-      data: req.file.buffer
+      data: req.file.buffer,
     });
 
     await attachmentRepo.save(attachment);
 
-    const saved = await attachmentRepo.find({ where: { checklistItemId: itemId } });
+    const saved = await attachmentRepo.find({
+      where: { checklistItemId: itemId },
+    });
     const items = saved.map(att => ({
       id: att.id,
       uri: `data:${att.mimeType};base64,${att.data.toString('base64')}`,
-      filename: att.filename
+      filename: att.filename,
     }));
     return res.json(items);
   } catch (e) {
-    return res.status(500).json({ message: '첨부파일 저장 실패', error: e.message });
+    return res
+      .status(500)
+      .json({ message: '첨부파일 저장 실패', error: e.message });
   }
 });
 
@@ -82,4 +90,4 @@ router.delete('/:attachmentId', async (req, res) => {
   return res.json({ success: true, id: attachmentId });
 });
 
-export default router; 
+export default router;

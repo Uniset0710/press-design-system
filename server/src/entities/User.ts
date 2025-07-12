@@ -14,7 +14,7 @@ export class User {
   @Column({
     type: 'varchar',
     enum: ['admin', 'user'],
-    default: 'user'
+    default: 'user',
   })
   role!: 'admin' | 'user';
 
@@ -30,4 +30,4 @@ export class User {
     this.createdAt = new Date();
     this.updatedAt = new Date();
   }
-} 
+}

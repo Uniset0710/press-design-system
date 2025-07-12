@@ -1,5 +1,11 @@
 import { v4 as uuid } from 'uuid';
-import { AttachmentData, AttachmentResponse, ChecklistItem, ChecklistData, NetworkError } from '@/types/checklist';
+import {
+  AttachmentData,
+  AttachmentResponse,
+  ChecklistItem,
+  ChecklistData,
+  NetworkError,
+} from '@/types/checklist';
 
 export async function uploadAttachment(
   file: File,
@@ -91,4 +97,4 @@ export async function uploadAttachment(
     // 5. 메모리 정리
     URL.revokeObjectURL(blobUrl);
   }
-} 
+}

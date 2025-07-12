@@ -90,4 +90,4 @@ describe('TreeView', () => {
     fireEvent.click(screen.getByText('Part 1'));
     expect(onSelectPart).toHaveBeenCalledWith({ id: 'part1', name: 'Part 1' });
   });
-}); 
+});

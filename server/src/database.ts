@@ -14,4 +14,4 @@ export const AppDataSource = new DataSource({
   entities: [User, TreeNode, ChecklistItem, Attachment, Comment, History],
   subscribers: [],
   migrations: [],
-}); 
+});

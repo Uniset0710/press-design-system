@@ -1,5 +1,5 @@
-"use client";
-import React, { useState, useEffect } from "react";
+'use client';
+import React, { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -8,18 +8,29 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
   sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
-export interface Part { id: string; name: string; }
-export interface Assembly { id: string; name: string; parts: Part[]; }
-export interface PressNode { id: string; name: string; assemblies: Assembly[]; }
+export interface Part {
+  id: string;
+  name: string;
+}
+export interface Assembly {
+  id: string;
+  name: string;
+  parts: Part[];
+}
+export interface PressNode {
+  id: string;
+  name: string;
+  assemblies: Assembly[];
+}
 
 interface TreeViewProps {
   data: PressNode[];
@@ -27,10 +38,15 @@ interface TreeViewProps {
   onSelectPart: (part: Part) => void;
   onEditPart: (partId: string, newName: string) => void;
   onEditAssembly: (assemblyId: string, newName: string) => void;
-  onDelete: (type: "part" | "assembly", id: string) => void;
+  onDelete: (type: 'part' | 'assembly', id: string) => void;
   onReorder: (
-    type: "moveAssembly" | "movePart",
-    payload: { nodeId: string; assemblyId?: string; fromIndex: number; toIndex: number }
+    type: 'moveAssembly' | 'movePart',
+    payload: {
+      nodeId: string;
+      assemblyId?: string;
+      fromIndex: number;
+      toIndex: number;
+    }
   ) => void;
   editMode?: boolean;
 }
@@ -50,19 +66,21 @@ export default function TreeView({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  console.log("트리 데이터(data):", data);
+  console.log('트리 데이터(data):', data);
   data.forEach(node => {
-    console.log("node.id:", node.id, "node.name:", node.name);
+    console.log('node.id:', node.id, 'node.name:', node.name);
   });
 
   // collapse state for root nodes (assemblies list)
-  const [rootExpanded, setRootExpanded] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    data.forEach(node => {
-      init[node.id] = String(node.name).toLowerCase().includes('press');
-    });
-    return init;
-  });
+  const [rootExpanded, setRootExpanded] = useState<Record<string, boolean>>(
+    () => {
+      const init: Record<string, boolean> = {};
+      data.forEach(node => {
+        init[node.id] = String(node.name).toLowerCase().includes('press');
+      });
+      return init;
+    }
+  );
 
   useEffect(() => {
     setRootExpanded(prev => {
@@ -83,7 +101,9 @@ export default function TreeView({
   };
 
   // Assembly expanded state (for all assemblies under all roots)
-  const [assemblyExpanded, setAssemblyExpanded] = useState<Record<string, boolean>>({});
+  const [assemblyExpanded, setAssemblyExpanded] = useState<
+    Record<string, boolean>
+  >({});
   useEffect(() => {
     setAssemblyExpanded(prev => {
       const next: Record<string, boolean> = { ...prev };
@@ -118,21 +138,26 @@ export default function TreeView({
     const toId = over.data.current?.sortable.containerId;
     if (!fromId || fromId !== toId) return;
 
-    if (fromId.startsWith("assemblies-")) {
-      const nodeId = fromId.replace("assemblies-", "");
-      const node = data.find((n) => n.id === nodeId);
+    if (fromId.startsWith('assemblies-')) {
+      const nodeId = fromId.replace('assemblies-', '');
+      const node = data.find(n => n.id === nodeId);
       if (!node) return;
-      const fromIndex = node.assemblies.findIndex((a) => a.id === active.id);
-      const toIndex = node.assemblies.findIndex((a) => a.id === over.id);
-      onReorder("moveAssembly", { nodeId, fromIndex, toIndex });
-    } else if (fromId.startsWith("parts-")) {
-      const assemblyId = fromId.replace("parts-", "");
-      const node = data.find((n) => n.assemblies.some((a) => a.id === assemblyId));
+      const fromIndex = node.assemblies.findIndex(a => a.id === active.id);
+      const toIndex = node.assemblies.findIndex(a => a.id === over.id);
+      onReorder('moveAssembly', { nodeId, fromIndex, toIndex });
+    } else if (fromId.startsWith('parts-')) {
+      const assemblyId = fromId.replace('parts-', '');
+      const node = data.find(n => n.assemblies.some(a => a.id === assemblyId));
       if (!node) return;
-      const asm = node.assemblies.find((a) => a.id === assemblyId)!;
-      const fromIndex = asm.parts.findIndex((p) => p.id === active.id);
-      const toIndex = asm.parts.findIndex((p) => p.id === over.id);
-      onReorder("movePart", { nodeId: node.id, assemblyId, fromIndex, toIndex });
+      const asm = node.assemblies.find(a => a.id === assemblyId)!;
+      const fromIndex = asm.parts.findIndex(p => p.id === active.id);
+      const toIndex = asm.parts.findIndex(p => p.id === over.id);
+      onReorder('movePart', {
+        nodeId: node.id,
+        assemblyId,
+        fromIndex,
+        toIndex,
+      });
     }
   };
 
@@ -172,53 +197,127 @@ export default function TreeView({
   };
 
   // Sortable assembly row
-  const AssemblyRow: React.FC<{ nodeId: string; assembly: Assembly; expanded: boolean; setExpanded: (v: boolean) => void }> = ({ nodeId, assembly, expanded, setExpanded }) => {
+  const AssemblyRow: React.FC<{
+    nodeId: string;
+    assembly: Assembly;
+    expanded: boolean;
+    setExpanded: (v: boolean) => void;
+  }> = ({ nodeId, assembly, expanded, setExpanded }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(assembly.name);
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
       id: assembly.id,
       data: { sortable: { containerId: `assemblies-${nodeId}` } },
     });
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
 
     return (
-      <li ref={setNodeRef} style={style} className="list-none mb-2">
-        <div className="group flex items-center">
+      <li ref={setNodeRef} style={style} className='list-none mb-2'>
+        <div className='group flex items-center'>
           {/* drag handle */}
-          <span {...attributes} {...listeners} className="cursor-move mr-2 select-none">≡</span>
-          <div className="flex-1">
+          <span
+            {...attributes}
+            {...listeners}
+            className='cursor-move mr-2 select-none'
+          >
+            ≡
+          </span>
+          <div className='flex-1'>
             {isEditing ? (
-              <div className="flex items-center gap-2 p-2 bg-white rounded shadow" onClick={e => e.stopPropagation()}>
+              <div
+                className='flex items-center gap-2 p-2 bg-white rounded shadow'
+                onClick={e => e.stopPropagation()}
+              >
                 <input
-                  className="border px-2 py-1 rounded"
+                  className='border px-2 py-1 rounded'
                   value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
+                  onChange={e => setEditName(e.target.value)}
                   autoFocus
                 />
-                <button type="button" className="text-green-600" onClick={e => { e.stopPropagation(); onEditAssembly(assembly.id, editName); setIsEditing(false); }}>Save</button>
-                <button type="button" className="text-red-600" onClick={e => { e.stopPropagation(); setEditName(assembly.name); setIsEditing(false); }}>Cancel</button>
+                <button
+                  type='button'
+                  className='text-green-600'
+                  onClick={e => {
+                    e.stopPropagation();
+                    onEditAssembly(assembly.id, editName);
+                    setIsEditing(false);
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  type='button'
+                  className='text-red-600'
+                  onClick={e => {
+                    e.stopPropagation();
+                    setEditName(assembly.name);
+                    setIsEditing(false);
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             ) : (
               <div
-                className="flex items-center justify-between p-2 bg-white rounded shadow cursor-pointer"
-                onClick={e => { e.stopPropagation(); toggleAssembly(assembly.id); }}
+                className='flex items-center justify-between p-2 bg-white rounded shadow cursor-pointer'
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleAssembly(assembly.id);
+                }}
               >
-                <span className="mr-2">{expanded ? '▾' : '▸'}</span>
+                <span className='mr-2'>{expanded ? '▾' : '▸'}</span>
                 <span>{assembly.name}</span>
                 {editMode && (
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" className="text-gray-600" onClick={e => { e.stopPropagation(); setIsEditing(true); }}>Edit</button>
-                    <button type="button" className="text-red-600" onClick={e => { e.stopPropagation(); onDelete("assembly", assembly.id); }}>Delete</button>
+                  <div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <button
+                      type='button'
+                      className='text-gray-600'
+                      onClick={e => {
+                        e.stopPropagation();
+                        setIsEditing(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type='button'
+                      className='text-red-600'
+                      onClick={e => {
+                        e.stopPropagation();
+                        onDelete('assembly', assembly.id);
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 )}
               </div>
             )}
             {/* parts list */}
             {expanded && (
-              <SortableContext items={assembly.parts.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <ul className="ml-8 list-none mt-1 space-y-1">
+              <SortableContext
+                items={assembly.parts.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className='ml-8 list-none mt-1 space-y-1'>
                   {assembly.parts.map(part => (
-                    <PartRow key={part.id} nodeId={nodeId} assemblyId={assembly.id} part={part} />
+                    <PartRow
+                      key={part.id}
+                      nodeId={nodeId}
+                      assemblyId={assembly.id}
+                      part={part}
+                    />
                   ))}
                 </ul>
               </SortableContext>
@@ -230,38 +329,114 @@ export default function TreeView({
   };
 
   // Sortable part row
-  const PartRow: React.FC<{ nodeId: string; assemblyId: string; part: Part }> = ({ nodeId, assemblyId, part }) => {
+  const PartRow: React.FC<{
+    nodeId: string;
+    assemblyId: string;
+    part: Part;
+  }> = ({ nodeId, assemblyId, part }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(part.name);
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
       id: part.id,
       data: { sortable: { containerId: `parts-${assemblyId}` } },
     });
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
 
     return (
-      <li ref={setNodeRef} style={style} className={`flex items-center p-1 hover:bg-gray-100 rounded ${selectedPartId === part.id ? 'bg-blue-100' : ''}`}>
+      <li
+        ref={setNodeRef}
+        style={style}
+        className={`flex items-center p-1 hover:bg-gray-100 rounded ${selectedPartId === part.id ? 'bg-blue-100' : ''}`}
+      >
         {/* Drag handle */}
-        <span {...attributes} {...listeners} className="cursor-move mr-2 select-none">≡</span>
-        <div className="flex-1 flex items-center justify-between" onClick={(e) => { e.stopPropagation(); handleSelectPart(part); }}>
+        <span
+          {...attributes}
+          {...listeners}
+          className='cursor-move mr-2 select-none'
+        >
+          ≡
+        </span>
+        <div
+          className='flex-1 flex items-center justify-between'
+          onClick={e => {
+            e.stopPropagation();
+            handleSelectPart(part);
+          }}
+        >
           {isEditing ? (
-            <div className="flex items-center gap-2 w-full" onClick={(e)=>e.stopPropagation()}>
+            <div
+              className='flex items-center gap-2 w-full'
+              onClick={e => e.stopPropagation()}
+            >
               <input
-                className="border px-2 py-1 rounded"
+                className='border px-2 py-1 rounded'
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+                onChange={e => setEditName(e.target.value)}
                 autoFocus
               />
-              <button type="button" className="text-green-600" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onEditPart(part.id, editName); setIsEditing(false); }}>Save</button>
-              <button type="button" className="text-red-600" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEditName(part.name); setIsEditing(false); }}>Cancel</button>
+              <button
+                type='button'
+                className='text-green-600'
+                onClick={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onEditPart(part.id, editName);
+                  setIsEditing(false);
+                }}
+              >
+                Save
+              </button>
+              <button
+                type='button'
+                className='text-red-600'
+                onClick={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setEditName(part.name);
+                  setIsEditing(false);
+                }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
             <>
               <span>{part.name}</span>
               {editMode && (
-                <div className="flex gap-2">
-                  <button type="button" className="text-gray-600" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setIsEditing(true); }}>Edit</button>
-                  <button type="button" className="text-red-600" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete("part", part.id); }}>Delete</button>
+                <div className='flex gap-2'>
+                  <button
+                    type='button'
+                    className='text-gray-600'
+                    onClick={e => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setIsEditing(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type='button'
+                    className='text-red-600'
+                    onClick={e => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onDelete('part', part.id);
+                    }}
+                  >
+                    Delete
+                  </button>
                 </div>
               )}
             </>
@@ -272,26 +447,38 @@ export default function TreeView({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <ul className="space-y-4">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <ul className='space-y-4'>
         {data.map(node => (
-          <li key={node.id} className="space-y-2">
+          <li key={node.id} className='space-y-2'>
             <div
-              className="font-semibold mb-1 cursor-pointer"
+              className='font-semibold mb-1 cursor-pointer'
               onClick={() => toggleRoot(node.id)}
             >
               {rootExpanded[node.id] ? '▾' : '▸'} {node.name}
             </div>
             {rootExpanded[node.id] && (
-              <SortableContext items={node.assemblies.map(a => a.id)} strategy={verticalListSortingStrategy}>
-                <ul className="ml-4 space-y-2">
+              <SortableContext
+                items={node.assemblies.map(a => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className='ml-4 space-y-2'>
                   {node.assemblies.map(assembly => (
                     <AssemblyRow
                       key={assembly.id}
                       nodeId={node.id}
                       assembly={assembly}
                       expanded={!!assemblyExpanded[assembly.id]}
-                      setExpanded={v => setAssemblyExpanded(prev => ({ ...prev, [assembly.id]: v }))}
+                      setExpanded={v =>
+                        setAssemblyExpanded(prev => ({
+                          ...prev,
+                          [assembly.id]: v,
+                        }))
+                      }
                     />
                   ))}
                 </ul>
@@ -302,4 +489,4 @@ export default function TreeView({
       </ul>
     </DndContext>
   );
-} 
+}

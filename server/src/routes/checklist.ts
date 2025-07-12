@@ -13,11 +13,22 @@ router.get('/:partId', async (req, res) => {
     return res.status(400).json({});
   }
   const items = await repo.find({ where: { partId } });
-  const attachmentRepo = AppDataSource.getRepository(require('../entities/Attachment').Attachment);
+  const attachmentRepo = AppDataSource.getRepository(
+    require('../entities/Attachment').Attachment
+  );
   // Initialize groups
-  const result: Record<string, any[]> = { DTL: [], DTE: [], DL: [], DE: [], '2P': [], '4P': [] };
+  const result: Record<string, any[]> = {
+    DTL: [],
+    DTE: [],
+    DL: [],
+    DE: [],
+    '2P': [],
+    '4P': [],
+  };
   for (const item of items) {
-    const attachments = await attachmentRepo.find({ where: { checklistItemId: item.id } });
+    const attachments = await attachmentRepo.find({
+      where: { checklistItemId: item.id },
+    });
     const mappedAttachments = attachments.map(att => ({
       id: att.id,
       uri: `data:${att.mimeType};base64,${att.data.toString('base64')}`,
@@ -35,7 +46,7 @@ router.get('/:partId', async (req, res) => {
       author: item.author,
       dueDate: item.dueDate,
       category: item.category,
-      priority: item.priority
+      priority: item.priority,
     });
   }
   return res.json(result);
@@ -48,7 +59,15 @@ router.post('/:partId', async (req, res) => {
     return res.status(400).json({ message: 'Invalid partId' });
   }
 
-  const { optionType, description, section, author, dueDate, category, priority } = req.body;
+  const {
+    optionType,
+    description,
+    section,
+    author,
+    dueDate,
+    category,
+    priority,
+  } = req.body;
   if (!optionType || !description || !section) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
@@ -61,7 +80,7 @@ router.post('/:partId', async (req, res) => {
     author,
     dueDate,
     category,
-    priority
+    priority,
   });
 
   await repo.save(item);
@@ -74,7 +93,7 @@ router.post('/:partId', async (req, res) => {
     author: item.author,
     dueDate: item.dueDate,
     category: item.category,
-    priority: item.priority
+    priority: item.priority,
   });
 });
 
@@ -91,7 +110,13 @@ router.put('/:itemId', async (req, res) => {
   }
 
   const { description, author, dueDate, category, priority } = req.body;
-  const before = { description: item.description, author: item.author, dueDate: item.dueDate, category: item.category, priority: item.priority };
+  const before = {
+    description: item.description,
+    author: item.author,
+    dueDate: item.dueDate,
+    category: item.category,
+    priority: item.priority,
+  };
   if (description !== undefined) item.description = description;
   if (author !== undefined) item.author = author;
   if (dueDate !== undefined) item.dueDate = dueDate;
@@ -103,13 +128,25 @@ router.put('/:itemId', async (req, res) => {
 
   // 히스토리 기록
   const historyRepo = AppDataSource.getRepository(History);
-  await historyRepo.save(historyRepo.create({
-    entityType: "checklist",
-    entityId: String(itemId),
-    action: "update",
-    changes: JSON.stringify({ message: "체크리스트 항목이 수정되었습니다.", before, after: { description: item.description, author: item.author, dueDate: item.dueDate, category: item.category, priority: item.priority } }),
-    author: author || 'unknown',
-  }));
+  await historyRepo.save(
+    historyRepo.create({
+      entityType: 'checklist',
+      entityId: String(itemId),
+      action: 'update',
+      changes: JSON.stringify({
+        message: '체크리스트 항목이 수정되었습니다.',
+        before,
+        after: {
+          description: item.description,
+          author: item.author,
+          dueDate: item.dueDate,
+          category: item.category,
+          priority: item.priority,
+        },
+      }),
+      author: author || 'unknown',
+    })
+  );
 
   return res.json({
     id: `${item.id}`,
@@ -120,7 +157,7 @@ router.put('/:itemId', async (req, res) => {
     author: item.author,
     dueDate: item.dueDate,
     category: item.category,
-    priority: item.priority
+    priority: item.priority,
   });
 });
 
@@ -138,16 +175,25 @@ router.delete('/:itemId', async (req, res) => {
 
   // 히스토리 기록
   const historyRepo = AppDataSource.getRepository(History);
-  await historyRepo.save(historyRepo.create({
-    entityType: "checklist",
-    entityId: String(itemId),
-    action: "delete",
-    changes: JSON.stringify({ message: "체크리스트 항목이 삭제되었습니다.", deleted: { description: item.description, author: item.author, dueDate: item.dueDate } }),
-    author: item.author || 'unknown',
-  }));
+  await historyRepo.save(
+    historyRepo.create({
+      entityType: 'checklist',
+      entityId: String(itemId),
+      action: 'delete',
+      changes: JSON.stringify({
+        message: '체크리스트 항목이 삭제되었습니다.',
+        deleted: {
+          description: item.description,
+          author: item.author,
+          dueDate: item.dueDate,
+        },
+      }),
+      author: item.author || 'unknown',
+    })
+  );
 
   await repo.remove(item);
   return res.json({ success: true, id: itemId });
 });
 
-export default router; 
+export default router;

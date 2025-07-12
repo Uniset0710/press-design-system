@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ChecklistItem } from './ChecklistItem';
 
 @Entity()
@@ -9,7 +15,9 @@ export class Attachment {
   @Column()
   checklistItemId!: number;
 
-  @ManyToOne(() => ChecklistItem, checklist => checklist.id, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ChecklistItem, checklist => checklist.id, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'checklistItemId' })
   checklistItem!: ChecklistItem;
 
@@ -29,4 +37,4 @@ export class Attachment {
     Object.assign(this, partial);
     this.createdAt = new Date();
   }
-} 
+}

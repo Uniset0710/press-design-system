@@ -8,7 +8,11 @@ export interface AuthRequest extends Request {
   user?: Omit<User, 'password'>;
 }
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
@@ -27,11 +31,15 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
   }
 };
 
-export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const adminMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   if (req.user?.role !== 'admin') {
     res.status(403).json({ message: '관리자 권한이 필요합니다.' });
     return;
   }
   next();
   return;
-}; 
+};

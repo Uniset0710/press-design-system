@@ -16,12 +16,14 @@ const app = express();
 const port = process.env.PORT || 3002;
 
 // CORS 설정
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(express.json());
 
@@ -30,7 +32,7 @@ AppDataSource.initialize()
   .then(() => {
     console.log('데이터베이스가 연결되었습니다.');
   })
-  .catch((error) => {
+  .catch(error => {
     console.error('데이터베이스 연결 중 오류가 발생했습니다:', error);
   });
 
@@ -48,4 +50,4 @@ app.get('/api/protected', authMiddleware, (req, res) => {
 
 app.listen(port, () => {
   console.log(`서버가 http://localhost:${port} 에서 실행 중입니다.`);
-}); 
+});

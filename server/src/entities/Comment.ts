@@ -1,12 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from "typeorm";
-import { ChecklistItem } from "./ChecklistItem";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+} from 'typeorm';
+import { ChecklistItem } from './ChecklistItem';
 
 @Entity()
 export class Comment {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column("text")
+  @Column('text')
   content: string;
 
   @Column()
@@ -15,6 +21,8 @@ export class Comment {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => ChecklistItem, item => item.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ChecklistItem, item => item.comments, {
+    onDelete: 'CASCADE',
+  })
   checklistItem: ChecklistItem;
-} 
+}

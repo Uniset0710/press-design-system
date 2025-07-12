@@ -24,29 +24,26 @@ const ItemToolbar: React.FC<ItemToolbarProps> = ({
   };
 
   return (
-    <div className="flex gap-2 mb-2">
+    <div className='flex gap-2 mb-2'>
       <button
         onClick={onStartEdit}
-        className="text-blue-500 hover:text-blue-700"
+        className='text-blue-500 hover:text-blue-700'
       >
         수정
       </button>
-      <button
-        onClick={onDelete}
-        className="text-red-500 hover:text-red-700"
-      >
+      <button onClick={onDelete} className='text-red-500 hover:text-red-700'>
         삭제
       </button>
       <input
         ref={fileInputRef}
-        type="file"
+        type='file'
         onChange={handleFileChange}
-        className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+        className='hidden'
+        accept='image/*,.pdf,.doc,.docx,.xls,.xlsx'
       />
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="text-green-500 hover:text-green-700"
+        className='text-green-500 hover:text-green-700'
       >
         첨부
       </button>
@@ -54,4 +51,4 @@ const ItemToolbar: React.FC<ItemToolbarProps> = ({
   );
 };
 
-export default ItemToolbar; 
+export default ItemToolbar;

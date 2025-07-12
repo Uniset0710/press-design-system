@@ -25,43 +25,51 @@ export function useChecklistFilter(
 
     // 텍스트 필터링
     if (filterOptions.text) {
-      filteredItems = filteredItems.filter(item =>
-        item.text.toLowerCase().includes(filterOptions.text.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(filterOptions.text.toLowerCase()))
+      filteredItems = filteredItems.filter(
+        item =>
+          item.text.toLowerCase().includes(filterOptions.text.toLowerCase()) ||
+          (item.description &&
+            item.description
+              .toLowerCase()
+              .includes(filterOptions.text.toLowerCase()))
       );
     }
 
     // 담당자 필터링
     if (filterOptions.author) {
-      filteredItems = filteredItems.filter(item => 
-        (item.author || '') === filterOptions.author
+      filteredItems = filteredItems.filter(
+        item => (item.author || '') === filterOptions.author
       );
     }
 
     // 날짜 범위 필터링
     if (filterOptions.startDate) {
-      filteredItems = filteredItems.filter(item => 
-        item.dueDate ? item.dueDate.slice(0, 10) >= filterOptions.startDate : false
+      filteredItems = filteredItems.filter(item =>
+        item.dueDate
+          ? item.dueDate.slice(0, 10) >= filterOptions.startDate
+          : false
       );
     }
 
     if (filterOptions.endDate) {
-      filteredItems = filteredItems.filter(item => 
-        item.dueDate ? item.dueDate.slice(0, 10) <= filterOptions.endDate : false
+      filteredItems = filteredItems.filter(item =>
+        item.dueDate
+          ? item.dueDate.slice(0, 10) <= filterOptions.endDate
+          : false
       );
     }
 
     // 분류 필터링
     if (filterOptions.category) {
-      filteredItems = filteredItems.filter(item => 
-        ((item as any).category || '') === filterOptions.category
+      filteredItems = filteredItems.filter(
+        item => ((item as any).category || '') === filterOptions.category
       );
     }
 
     // 중요도 필터링
     if (filterOptions.priority) {
-      filteredItems = filteredItems.filter(item => 
-        ((item as any).priority || '') === filterOptions.priority
+      filteredItems = filteredItems.filter(
+        item => ((item as any).priority || '') === filterOptions.priority
       );
     }
 
@@ -69,7 +77,7 @@ export function useChecklistFilter(
     if (sortOptions.column) {
       filteredItems.sort((a, b) => {
         let aVal: any, bVal: any;
-        
+
         switch (sortOptions.column) {
           case 'author':
             aVal = a.author || '';
@@ -90,7 +98,7 @@ export function useChecklistFilter(
           default:
             return 0;
         }
-        
+
         if (sortOptions.order === 'asc') {
           return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
         } else {
@@ -101,4 +109,4 @@ export function useChecklistFilter(
 
     return filteredItems;
   }, [items, filterOptions, sortOptions]);
-} 
+}

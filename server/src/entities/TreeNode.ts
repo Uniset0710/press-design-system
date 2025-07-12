@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class TreeNode {
@@ -10,7 +18,7 @@ export class TreeNode {
 
   @Column({
     type: 'varchar',
-    enum: ['press', 'assembly', 'part']
+    enum: ['press', 'assembly', 'part'],
   })
   type!: 'press' | 'assembly' | 'part';
 
@@ -36,4 +44,4 @@ export class TreeNode {
     // this.parentId = partial.parentId || null;
     // timestamps are auto-managed
   }
-} 
+}

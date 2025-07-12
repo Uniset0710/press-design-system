@@ -1,5 +1,5 @@
-"use client";
-import React from "react";
+'use client';
+import React from 'react';
 
 /**
  * 부품 정보를 담는 인터페이스
@@ -37,13 +37,13 @@ export interface PressNode {
 
 /**
  * 트리 구조의 데이터를 표시하는 컴포넌트
- * 
+ *
  * @description
  * - 프레스 > 조립체 > 부품의 계층 구조를 트리 형태로 표시합니다
  * - 각 레벨을 확장/축소할 수 있습니다
  * - 부품 선택 시 하이라이트 표시됩니다
  * - 반응형 디자인으로 모바일에서도 사용 가능합니다
- * 
+ *
  * @example
  * ```tsx
  * <TreeView
@@ -76,47 +76,87 @@ interface TreeViewProps {
 
 function ChevronRight() {
   return (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="inline-block align-middle">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <svg
+      width='18'
+      height='18'
+      fill='none'
+      viewBox='0 0 24 24'
+      stroke='currentColor'
+      className='inline-block align-middle'
+    >
+      <path
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth={2}
+        d='M9 5l7 7-7 7'
+      />
     </svg>
   );
 }
 function ChevronDown() {
   return (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="inline-block align-middle">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    <svg
+      width='18'
+      height='18'
+      fill='none'
+      viewBox='0 0 24 24'
+      stroke='currentColor'
+      className='inline-block align-middle'
+    >
+      <path
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth={2}
+        d='M19 9l-7 7-7-7'
+      />
     </svg>
   );
 }
 
-export default function TreeView({ data, onSelectPart, selectedPartId, openNodes, onToggleNode, openAssemblies, onToggleAssembly }: TreeViewProps) {
+export default function TreeView({
+  data,
+  onSelectPart,
+  selectedPartId,
+  openNodes,
+  onToggleNode,
+  openAssemblies,
+  onToggleAssembly,
+}: TreeViewProps) {
   return (
-    <ul className="space-y-2">
-      {data.map((node) => (
+    <ul className='space-y-2'>
+      {data.map(node => (
         <li key={node.id}>
           {/* Press(루트) */}
           <div
-            className="font-bold text-lg flex items-center cursor-pointer px-3 py-2 hover:bg-gray-50 rounded border border-gray-200 bg-white mb-2 select-none"
+            className='font-bold text-lg flex items-center cursor-pointer px-3 py-2 hover:bg-gray-50 rounded border border-gray-200 bg-white mb-2 select-none'
             onClick={() => onToggleNode(node.id)}
           >
-            <span className="mr-2">{openNodes[node.id] ? <ChevronDown /> : <ChevronRight />}</span>
+            <span className='mr-2'>
+              {openNodes[node.id] ? <ChevronDown /> : <ChevronRight />}
+            </span>
             <span>{node.name}</span>
           </div>
           {openNodes[node.id] && (
-            <ul className="ml-4 space-y-2">
-              {node.assemblies.map((asm) => (
+            <ul className='ml-4 space-y-2'>
+              {node.assemblies.map(asm => (
                 <li key={asm.id}>
                   {/* Assembly */}
                   <div
-                    className="text-[17px] flex items-center justify-end cursor-pointer px-3 py-2 hover:bg-gray-50 rounded border border-gray-200 bg-white mb-2 select-none"
+                    className='text-[17px] flex items-center justify-end cursor-pointer px-3 py-2 hover:bg-gray-50 rounded border border-gray-200 bg-white mb-2 select-none'
                     onClick={() => onToggleAssembly(asm.id)}
                   >
-                    <span className="mr-2">{openAssemblies[asm.id] ? <ChevronDown /> : <ChevronRight />}</span>
-                    <span className="flex-1 text-right">{asm.name}</span>
+                    <span className='mr-2'>
+                      {openAssemblies[asm.id] ? (
+                        <ChevronDown />
+                      ) : (
+                        <ChevronRight />
+                      )}
+                    </span>
+                    <span className='flex-1 text-right'>{asm.name}</span>
                   </div>
                   {openAssemblies[asm.id] && (
-                    <ul className="ml-6 space-y-1">
-                      {asm.parts.map((part) => (
+                    <ul className='ml-6 space-y-1'>
+                      {asm.parts.map(part => (
                         <li key={part.id}>
                           {/* Part */}
                           <div
@@ -138,4 +178,4 @@ export default function TreeView({ data, onSelectPart, selectedPartId, openNodes
       ))}
     </ul>
   );
-} 
+}

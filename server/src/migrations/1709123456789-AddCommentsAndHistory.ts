@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddCommentsAndHistory1709123456789 implements MigrationInterface {
-    name = 'AddCommentsAndHistory1709123456789'
+  name = 'AddCommentsAndHistory1709123456789';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "comment" (
                 "id" varchar PRIMARY KEY NOT NULL,
                 "content" text NOT NULL,
@@ -15,7 +15,7 @@ export class AddCommentsAndHistory1709123456789 implements MigrationInterface {
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "history" (
                 "id" varchar PRIMARY KEY NOT NULL,
                 "entityType" varchar NOT NULL,
@@ -27,19 +27,19 @@ export class AddCommentsAndHistory1709123456789 implements MigrationInterface {
             )
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX "IDX_comment_checklist_item" ON "comment" ("checklistItemId")
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE INDEX "IDX_history_entity" ON "history" ("entityType", "entityId")
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "IDX_history_entity"`);
-        await queryRunner.query(`DROP INDEX "IDX_comment_checklist_item"`);
-        await queryRunner.query(`DROP TABLE "history"`);
-        await queryRunner.query(`DROP TABLE "comment"`);
-    }
-} 
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX "IDX_history_entity"`);
+    await queryRunner.query(`DROP INDEX "IDX_comment_checklist_item"`);
+    await queryRunner.query(`DROP TABLE "history"`);
+    await queryRunner.query(`DROP TABLE "comment"`);
+  }
+}

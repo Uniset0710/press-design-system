@@ -8,13 +8,22 @@ const repo = AppDataSource.getRepository(TreeNode);
 
 // GET /api/tree - fetch all press nodes with nested assemblies and parts
 router.get('/', async (req, res) => {
-  const roots = await repo.find({ where: { parentId: IsNull() }, select: ['id', 'name'] });
+  const roots = await repo.find({
+    where: { parentId: IsNull() },
+    select: ['id', 'name'],
+  });
   const data = await Promise.all(
-    roots.map(async (root) => {
-      const assemblies = await repo.find({ where: { parentId: root.id, type: 'assembly' }, select: ['id', 'name'] });
+    roots.map(async root => {
+      const assemblies = await repo.find({
+        where: { parentId: root.id, type: 'assembly' },
+        select: ['id', 'name'],
+      });
       const assemblyNodes = await Promise.all(
-        assemblies.map(async (asm) => {
-          const parts = await repo.find({ where: { parentId: asm.id, type: 'part' }, select: ['id', 'name'] });
+        assemblies.map(async asm => {
+          const parts = await repo.find({
+            where: { parentId: asm.id, type: 'part' },
+            select: ['id', 'name'],
+          });
           return { id: asm.id, name: asm.name, parts };
         })
       );
@@ -38,7 +47,8 @@ router.post('/', async (req, res) => {
   if (nodeId) {
     // add assembly
     const press = await repo.findOneBy({ id: nodeId, type: 'press' });
-    if (!press) return res.status(404).json({ message: 'Press node not found' });
+    if (!press)
+      return res.status(404).json({ message: 'Press node not found' });
     const asm = repo.create({ name, type: 'assembly', parentId: nodeId });
     await repo.save(asm);
     return res.json(asm);
@@ -83,4 +93,4 @@ router.patch('/', (req, res) => {
   return res.status(501).json({ message: 'Reordering not implemented yet' });
 });
 
-export default router; 
+export default router;

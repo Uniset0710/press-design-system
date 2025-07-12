@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { TreeNode } from './TreeNode';
 import { Comment } from './Comment';
 
@@ -18,7 +24,7 @@ export class ChecklistItem {
 
   @Column({
     type: 'varchar',
-    enum: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P']
+    enum: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'],
   })
   optionType!: 'DTL' | 'DTE' | 'DL' | 'DE' | '2P' | '4P';
 
@@ -54,4 +60,4 @@ export class ChecklistItem {
     this.createdAt = new Date();
     this.updatedAt = new Date();
   }
-} 
+}
