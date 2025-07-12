@@ -17,6 +17,7 @@ import ChecklistFilterBar from '../components/checklist/ChecklistFilterBar';
 import { useChecklistFilter } from '../hooks/useChecklistFilter';
 import { useTreeSearch } from '../hooks/useTreeSearch';
 import { useChecklistData } from '../hooks/useChecklistData';
+import { ChecklistProvider, useChecklistContext } from '../context/ChecklistContext';
 
 type TreeData = PressNode[];
 
@@ -27,7 +28,7 @@ interface CachedChecklist {
   fetchedAt: number;
 }
 
-export default function Home() {
+function PageContent() {
   const { data: session, status } = useSession();
   console.log("useSession status:", status, session);
   const router = useRouter();
@@ -546,6 +547,64 @@ export default function Home() {
 
   const filteredTreeData = useTreeSearch(treeData, searchTerm);
 
+  // 현재 섹션의 데이터 계산을 컴포넌트 최상위로 이동
+  const currentSection = sections[currentSectionIndex];
+  const sectionOpts = currentSection.options.filter(opt => selectedOptions.includes(opt));
+  const allItems = sectionOpts
+    .flatMap(opt => checklistData[opt] || [])
+    .filter(item => item.section === currentSection.title);
+  
+  // Remove duplicate items by text, preserving last occurrence
+  const uniqueItems = [...new Map(
+    allItems
+      .filter(item => item.section === currentSection.title)
+      .map(item => [item.text, item])
+  ).values()];
+
+  // 섹션별 필터 상태
+  const filterValue = sectionFilters[currentSection.title] || "";
+  const sortState = sectionSort[currentSection.title];
+  const advFilter = sectionAdvancedFilters[currentSection.title] || { author: '', startDate: '', endDate: '', category: '', priority: '' };
+  
+  // 커스텀 훅을 사용한 필터링 (컴포넌트 최상위에서 호출)
+  const filteredItems = useChecklistFilter(
+    uniqueItems,
+    {
+      text: filterValue,
+      author: advFilter.author,
+      startDate: advFilter.startDate,
+      endDate: advFilter.endDate,
+      category: advFilter.category,
+      priority: advFilter.priority
+    },
+    {
+      column: sortState?.column || null,
+      order: sortState?.order || 'asc'
+    }
+  );
+
+  // 섹션별 담당자 목록 추출
+  const authors = Array.from(new Set(uniqueItems.map(item => item.author).filter(Boolean)));
+
+  const {
+    openNodes, setOpenNodes,
+    openAssemblies, setOpenAssemblies
+  } = useChecklistContext();
+
+  const handleToggleNode = (nodeId: string) => {
+    setOpenNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId],
+    }));
+  };
+
+  const handleToggleAssembly = (assemblyId: string) => {
+    setOpenAssemblies(prev => ({
+      ...prev,
+      [assemblyId]: !prev[assemblyId],
+    }));
+  };
+
   return (
     <div className="flex min-h-screen">
       {error && (
@@ -578,6 +637,10 @@ export default function Home() {
               data={filteredTreeData}
               selectedPartId={selectedPartId}
               onSelectPart={handlePartSelect}
+              openNodes={openNodes}
+              onToggleNode={handleToggleNode}
+              openAssemblies={openAssemblies}
+              onToggleAssembly={handleToggleAssembly}
             />
             <div className="mt-6">
               <h3 className="font-semibold mb-2">Add New Assembly</h3>
@@ -633,47 +696,6 @@ export default function Home() {
                 {/* 한 번에 한 섹션만 렌더링 */}
                 {(() => {
                   const sec = sections[currentSectionIndex];
-                  // aggregate attached items only for classification codes belonging to this section
-                  const sectionOpts = sec.options.filter(opt => selectedOptions.includes(opt));
-                  const allItems = sectionOpts
-                    .flatMap(opt => checklistData[opt] || [])
-                    .filter(item => item.section === sec.title);
-                  // Remove duplicate items by text, preserving last occurrence
-                  let uniqueItems = [...new Map(
-                    allItems
-                      .filter(item => item.section === sec.title)
-                      .map(item => [item.text, item])
-                  ).values()];
-                  // 섹션별 필터 적용
-                  const filterValue = sectionFilters[sec.title] || "";
-                  if (filterValue) {
-                    uniqueItems = uniqueItems.filter(item =>
-                      item.text.toLowerCase().includes(filterValue.toLowerCase()) ||
-                      (item.description && item.description.toLowerCase().includes(filterValue.toLowerCase()))
-                    );
-                  }
-                  // 섹션별 정렬 상태
-                  const sortState = sectionSort[sec.title];
-                  // 섹션별 고급 필터 상태
-                  const advFilter = sectionAdvancedFilters[sec.title] || { author: '', startDate: '', endDate: '', category: '', priority: '' };
-                  // 섹션별 담당자 목록 추출
-                  const authors = Array.from(new Set(uniqueItems.map(item => item.author).filter(Boolean)));
-                  // 커스텀 훅을 사용한 필터링
-                  const filteredItems = useChecklistFilter(
-                    uniqueItems,
-                    {
-                      text: filterValue,
-                      author: advFilter.author,
-                      startDate: advFilter.startDate,
-                      endDate: advFilter.endDate,
-                      category: advFilter.category,
-                      priority: advFilter.priority
-                    },
-                    {
-                      column: sortState?.column || null,
-                      order: sortState?.order || 'asc'
-                    }
-                  );
                   return (
                     <div>
                       <ChecklistInputForm
@@ -801,5 +823,13 @@ export default function Home() {
         onImagePreviewClose={() => setImagePreview(null)}
       />
     </div>
+  );
+}
+
+export default function Home(props) {
+  return (
+    <ChecklistProvider>
+      <PageContent {...props} />
+    </ChecklistProvider>
   );
 }
