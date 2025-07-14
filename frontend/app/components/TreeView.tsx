@@ -49,6 +49,8 @@ interface TreeViewProps {
     }
   ) => void;
   editMode?: boolean;
+  assemblyExpanded: Record<string, boolean>;
+  onToggleAssembly: (assemblyId: string) => void;
 }
 
 export default function TreeView({
@@ -59,7 +61,9 @@ export default function TreeView({
   onEditAssembly,
   onDelete,
   onReorder,
-  editMode = true,
+  editMode = false,
+  assemblyExpanded,
+  onToggleAssembly,
 }: TreeViewProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -100,36 +104,7 @@ export default function TreeView({
     }));
   };
 
-  // Assembly expanded state (for all assemblies under all roots)
-  const [assemblyExpanded, setAssemblyExpanded] = useState<
-    Record<string, boolean>
-  >({});
-  useEffect(() => {
-    setAssemblyExpanded(prev => {
-      const next: Record<string, boolean> = { ...prev };
-      data.forEach(node => {
-        node.assemblies.forEach(asm => {
-          if (!(asm.id in next)) {
-            next[asm.id] = false; // 새 어셈블리만 collapsed로 초기화
-          }
-        });
-      });
-      // 더 이상 존재하지 않는 어셈블리 제거
-      Object.keys(next).forEach(id => {
-        if (!data.some(node => node.assemblies.some(asm => asm.id === id))) {
-          delete next[id];
-        }
-      });
-      return next;
-    });
-  }, [data]); // data만 의존성으로 사용
 
-  const toggleAssembly = (assemblyId: string) => {
-    setAssemblyExpanded(prev => ({
-      ...prev,
-      [assemblyId]: !prev[assemblyId],
-    }));
-  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -185,11 +160,8 @@ export default function TreeView({
     }
 
     // MC BLOCK(어셈블리)는 여러 개 열릴 수 있게, 기존 상태 보존
-    if (foundAssemblyId) {
-      setAssemblyExpanded(prev => ({
-        ...prev,
-        [foundAssemblyId!]: true,
-      }));
+    if (foundAssemblyId && !assemblyExpanded[foundAssemblyId]) {
+      onToggleAssembly(foundAssemblyId!);
     }
 
     console.log('rootExpanded:', rootExpanded);
@@ -273,13 +245,13 @@ export default function TreeView({
                 className='flex items-center justify-between p-2 bg-white rounded shadow cursor-pointer'
                 onClick={e => {
                   e.stopPropagation();
-                  toggleAssembly(assembly.id);
+                  onToggleAssembly(assembly.id);
                 }}
               >
                 <span className='mr-2'>{expanded ? '▾' : '▸'}</span>
                 <span>{assembly.name}</span>
                 {editMode && (
-                  <div className='flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
+                  <div className='flex gap-2'>
                     <button
                       type='button'
                       className='text-gray-600'
@@ -473,12 +445,11 @@ export default function TreeView({
                       nodeId={node.id}
                       assembly={assembly}
                       expanded={!!assemblyExpanded[assembly.id]}
-                      setExpanded={v =>
-                        setAssemblyExpanded(prev => ({
-                          ...prev,
-                          [assembly.id]: v,
-                        }))
-                      }
+                      setExpanded={v => {
+                        if (v !== !!assemblyExpanded[assembly.id]) {
+                          onToggleAssembly(assembly.id);
+                        }
+                      }}
                     />
                   ))}
                 </ul>

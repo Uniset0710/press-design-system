@@ -13,4 +13,15 @@ module.exports = {
   testMatch: [
     '**/?(*.)+(test).[tj]s?(x)'
   ],
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react-jsx',
+      },
+    },
+  },
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testEnvironmentOptions: {
+    customExportConditions: [''],
+  },
 }; 

@@ -25,6 +25,9 @@ export class TreeNode {
   @Column({ nullable: true })
   parentId!: number | null;
 
+  @Column({ type: 'int', default: 0 })
+  order!: number;
+
   @ManyToOne(() => TreeNode, node => node.children, { nullable: true })
   parent?: TreeNode;
 

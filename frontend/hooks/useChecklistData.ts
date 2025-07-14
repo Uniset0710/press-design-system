@@ -10,12 +10,9 @@ export function useChecklistData(selectedPartId: string, session: any) {
   const [checklistData, setChecklistData] = useState<
     Record<string, ChecklistItem[]>
   >({
-    DTL: [],
-    DTE: [],
-    DL: [],
-    DE: [],
-    '2P': [],
-    '4P': [],
+    'Design Check List': [],
+    'Machining Check List': [],
+    'Assembly Check List': [],
   });
   const [checklistCache, setChecklistCache] = useState<
     Record<string, CachedChecklist>
@@ -46,7 +43,11 @@ export function useChecklistData(selectedPartId: string, session: any) {
 
   useEffect(() => {
     if (!selectedPartId || !session) {
-      setChecklistData({});
+      setChecklistData({
+        'Design Check List': [],
+        'Machining Check List': [],
+        'Assembly Check List': [],
+      });
       return;
     }
 
@@ -56,17 +57,70 @@ export function useChecklistData(selectedPartId: string, session: any) {
       return;
     }
 
-    setChecklistData({});
+    setChecklistData({
+      'Design Check List': [],
+      'Machining Check List': [],
+      'Assembly Check List': [],
+    });
+    
     fetch(`/api/checklist/${selectedPartId}`, {
       headers: { Authorization: `Bearer ${session?.accessToken}` },
     })
       .then(res => res.json())
       .then(data => {
-        setChecklistData(data);
+        console.log('Raw checklist data:', data); // 디버깅용
+        
+        // 백엔드에서 받은 데이터를 섹션별로 분류
+        const sectionedData: Record<string, ChecklistItem[]> = {
+          'Design Check List': [],
+          'Machining Check List': [],
+          'Assembly Check List': [],
+        };
+
+        // 데이터가 배열인 경우 섹션별로 분류
+        if (Array.isArray(data)) {
+          data.forEach((item: any) => {
+            let section = item.section;
+            if (!section || !['Design Check List', 'Machining Check List', 'Assembly Check List'].includes(section)) {
+              section = 'Design Check List';
+            }
+            sectionedData[section].push({
+              ...item,
+              optionType: item.optionType || 'DTL', // 기본값 설정
+            });
+          });
+        } else if (typeof data === 'object') {
+          // 옵션별(DTL, DTE 등)로 분리된 데이터를 섹션별로 합침
+          Object.entries(data).forEach(([optionType, arr]: [string, any]) => {
+            if (Array.isArray(arr)) {
+              arr.forEach((item: any) => {
+                let section = item.section;
+                if (!section || !['Design Check List', 'Machining Check List', 'Assembly Check List'].includes(section)) {
+                  section = 'Design Check List';
+                }
+                sectionedData[section].push({
+                  ...item,
+                  optionType: optionType, // 옵션 타입을 명시적으로 설정
+                });
+              });
+            }
+          });
+        }
+
+        console.log('Processed sectioned data:', sectionedData); // 디버깅용
+        setChecklistData(sectionedData);
         setChecklistCache(prev => ({
           ...prev,
-          [selectedPartId]: { data, fetchedAt: Date.now() },
+          [selectedPartId]: { data: sectionedData, fetchedAt: Date.now() },
         }));
+      })
+      .catch(error => {
+        console.error('Error fetching checklist data:', error);
+        setChecklistData({
+          'Design Check List': [],
+          'Machining Check List': [],
+          'Assembly Check List': [],
+        });
       });
   }, [selectedPartId, session]);
 

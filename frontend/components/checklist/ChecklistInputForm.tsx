@@ -1,9 +1,6 @@
 import React from 'react';
 
 interface ChecklistInputFormProps {
-  selectedPart: any;
-  sections: Array<{ title: string; options: string[] }>;
-  selectedChecklistSection: string;
   currentInput: {
     text: string;
     author: string;
@@ -11,10 +8,9 @@ interface ChecklistInputFormProps {
     options: string[];
     category: string;
     priority: string;
+    section?: string; // 섹션 선택을 위한 필드 추가
   };
-  options: string[];
-  onSectionChange: (section: string) => void;
-  onInputChange: (
+  setCurrentInput: (
     patch: Partial<{
       text: string;
       author: string;
@@ -22,41 +18,47 @@ interface ChecklistInputFormProps {
       options: string[];
       category: string;
       priority: string;
+      section?: string;
     }>
   ) => void;
-  onAddItem: () => void;
+  onAdd: () => void;
+  options: string[];
+  allSelected: boolean;
+  handleToggleAll: () => void;
+  sections: { title: string; options: string[] }[]; // 섹션 목록 추가
+  currentSectionIndex: number; // 현재 섹션 인덱스 추가
 }
 
 const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
-  selectedPart,
-  sections,
-  selectedChecklistSection,
   currentInput,
+  setCurrentInput,
+  onAdd,
   options,
-  onSectionChange,
-  onInputChange,
-  onAddItem,
+  allSelected,
+  handleToggleAll,
+  sections,
+  currentSectionIndex,
 }) => {
-  if (!selectedPart) return null;
-
   return (
     <div
       className='mb-6 p-4 bg-white rounded shadow'
       style={{ maxWidth: 900, marginRight: 'auto', marginLeft: 0 }}
     >
-      {/* Section selector */}
-      <label className='block font-medium mb-1'>Section:</label>
-      <select
-        className='w-full mb-2 p-1 border rounded'
-        value={selectedChecklistSection}
-        onChange={e => onSectionChange(e.target.value)}
-      >
-        {sections.map(sec => (
-          <option key={sec.title} value={sec.title}>
-            {sec.title}
-          </option>
-        ))}
-      </select>
+      {/* 섹션 선택 */}
+      <div className='mb-2'>
+        <label className='block font-medium mb-1'>섹션 선택</label>
+        <select
+          className='w-full p-1 border rounded'
+          value={currentInput.section || sections[currentSectionIndex]?.title || ''}
+          onChange={e => setCurrentInput({ section: e.target.value })}
+        >
+          {sections.map((section, idx) => (
+            <option key={section.title} value={section.title}>
+              {section.title}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Item text */}
       <label className='block font-medium mb-1'>Item text</label>
@@ -64,7 +66,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
         className='w-full mb-2 p-1 border rounded'
         placeholder='Item text'
         value={currentInput.text}
-        onChange={e => onInputChange({ text: e.target.value })}
+        onChange={e => setCurrentInput({ text: e.target.value })}
         rows={5}
       />
 
@@ -75,14 +77,14 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
           className='flex-1 p-1 border rounded'
           placeholder='담당자'
           value={currentInput.author}
-          onChange={e => onInputChange({ author: e.target.value })}
+          onChange={e => setCurrentInput({ author: e.target.value })}
         />
         <input
           type='date'
           className='flex-1 p-1 border rounded'
           placeholder='마감일'
           value={currentInput.dueDate}
-          onChange={e => onInputChange({ dueDate: e.target.value })}
+          onChange={e => setCurrentInput({ dueDate: e.target.value })}
         />
       </div>
 
@@ -91,7 +93,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
         <select
           className='flex-1 p-1 border rounded'
           value={currentInput.category}
-          onChange={e => onInputChange({ category: e.target.value })}
+          onChange={e => setCurrentInput({ category: e.target.value })}
         >
           <option value=''>분류 선택</option>
           <option value='용접'>용접</option>
@@ -101,7 +103,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
         <select
           className='flex-1 p-1 border rounded'
           value={currentInput.priority}
-          onChange={e => onInputChange({ priority: e.target.value })}
+          onChange={e => setCurrentInput({ priority: e.target.value })}
         >
           <option value=''>중요도 선택</option>
           <option value='최상'>최상</option>
@@ -117,13 +119,8 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
         <label className='flex items-center gap-1'>
           <input
             type='checkbox'
-            checked={currentInput.options.length === options.length}
-            onChange={() =>
-              onInputChange({
-                options:
-                  currentInput.options.length === options.length ? [] : options,
-              })
-            }
+            checked={allSelected}
+            onChange={handleToggleAll}
           />
           전체
         </label>
@@ -133,7 +130,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
               type='checkbox'
               checked={currentInput.options.includes(opt)}
               onChange={() =>
-                onInputChange({
+                setCurrentInput({
                   options: currentInput.options.includes(opt)
                     ? currentInput.options.filter(o => o !== opt)
                     : [...currentInput.options, opt],
@@ -148,7 +145,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
       {/* Add button */}
       <button
         className='bg-blue-500 text-white py-1 px-3 rounded'
-        onClick={onAddItem}
+        onClick={onAdd}
       >
         Add Item
       </button>

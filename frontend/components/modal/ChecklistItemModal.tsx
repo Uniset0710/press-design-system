@@ -37,7 +37,7 @@ const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-white rounded shadow-lg p-6 min-w-[600px] max-w-[98vw] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="bg-white rounded shadow-lg p-6 min-w-[600px] w-[700px] max-w-[98vw] max-h-[90vh] min-h-[500px] overflow-y-auto" onClick={e => e.stopPropagation()}>
           <h2 className="text-lg font-bold mb-4">{modalEditMode ? '수정' : '상세 정보'}</h2>
           
           {/* 작업이름 */}
@@ -45,83 +45,84 @@ const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
             <label className="block text-xs font-semibold mb-1">작업 이름</label>
             {modalEditMode ? (
               <textarea 
-                className="border rounded p-1 w-full min-h-[60px]" 
+                className="border rounded p-1 w-full min-h-[140px]" 
+                rows={7}
                 value={modalItem.text || modalItem.description || ''} 
                 onChange={e => onItemChange({ ...modalItem, text: e.target.value, description: e.target.value })} 
               />
             ) : (
-              <div className="p-2 bg-gray-50 rounded min-h-[40px]">{modalItem.text || modalItem.description}</div>
+              <div className="p-2 bg-gray-50 rounded min-h-[140px] whitespace-pre-line">{modalItem.text || modalItem.description}</div>
             )}
           </div>
-          
-          {/* 담당자 */}
-          <div className="mb-2">
-            <label className="block text-xs font-semibold mb-1">담당자</label>
-            {modalEditMode ? (
-              <input 
-                type="text" 
-                className="border rounded p-1 w-full" 
-                value={modalItem.author || ''} 
-                onChange={e => onItemChange({ ...modalItem, author: e.target.value })} 
-              />
-            ) : (
-              <div className="p-2 bg-gray-50 rounded min-h-[32px]">{modalItem.author || '-'}</div>
-            )}
+
+          {/* 담당자/등록일자 */}
+          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold mb-1">담당자</label>
+              {modalEditMode ? (
+                <input 
+                  type="text" 
+                  className="border rounded p-1 w-full" 
+                  value={modalItem.author || ''} 
+                  onChange={e => onItemChange({ ...modalItem, author: e.target.value })} 
+                />
+              ) : (
+                <div className="p-2 bg-gray-50 rounded min-h-[32px]">{modalItem.author || '-'}</div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1">등록일자</label>
+              {modalEditMode ? (
+                <input 
+                  type="date" 
+                  className="border rounded p-1 w-full" 
+                  value={modalItem.dueDate ? modalItem.dueDate.slice(0, 10) : ''} 
+                  onChange={e => onItemChange({ ...modalItem, dueDate: e.target.value })} 
+                />
+              ) : (
+                <div className="p-2 bg-gray-50 rounded min-h-[32px]">{modalItem.dueDate ? modalItem.dueDate.slice(0, 10) : '-'}</div>
+              )}
+            </div>
           </div>
-          
-          {/* 등록일자 */}
-          <div className="mb-2">
-            <label className="block text-xs font-semibold mb-1">등록일자</label>
-            {modalEditMode ? (
-              <input 
-                type="date" 
-                className="border rounded p-1 w-full" 
-                value={modalItem.dueDate ? modalItem.dueDate.slice(0, 10) : ''} 
-                onChange={e => onItemChange({ ...modalItem, dueDate: e.target.value })} 
-              />
-            ) : (
-              <div className="p-2 bg-gray-50 rounded min-h-[32px]">{modalItem.dueDate ? modalItem.dueDate.slice(0, 10) : '-'}</div>
-            )}
-          </div>
-          
-          {/* 분류 */}
-          <div className="mb-2">
-            <label className="block text-xs font-semibold mb-1">분류</label>
-            {modalEditMode ? (
-              <select
-                className="border rounded p-1 w-full"
-                value={(modalItem as any).category || ''}
-                onChange={e => onItemChange({ ...modalItem, category: e.target.value } as any)}
-              >
-                <option value="">분류 선택</option>
-                <option value="용접">용접</option>
-                <option value="가공">가공</option>
-                <option value="조립">조립</option>
-              </select>
-            ) : (
-              <div className="p-2 bg-gray-50 rounded min-h-[32px]">{(modalItem as any).category || '-'}</div>
-            )}
-          </div>
-          
-          {/* 중요도 */}
-          <div className="mb-2">
-            <label className="block text-xs font-semibold mb-1">중요도</label>
-            {modalEditMode ? (
-              <select
-                className="border rounded p-1 w-full"
-                value={(modalItem as any).priority || ''}
-                onChange={e => onItemChange({ ...modalItem, priority: e.target.value } as any)}
-              >
-                <option value="">중요도 선택</option>
-                <option value="최상">최상</option>
-                <option value="상">상</option>
-                <option value="중">중</option>
-                <option value="하">하</option>
-                <option value="최하">최하</option>
-              </select>
-            ) : (
-              <div className="p-2 bg-gray-50 rounded min-h-[32px]">{(modalItem as any).priority || '-'}</div>
-            )}
+
+          {/* 분류/중요도 */}
+          <div className="mb-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold mb-1">분류</label>
+              {modalEditMode ? (
+                <select
+                  className="border rounded p-1 w-full"
+                  value={(modalItem as any).category || ''}
+                  onChange={e => onItemChange({ ...modalItem, category: e.target.value } as any)}
+                >
+                  <option value="">분류 선택</option>
+                  <option value="용접">용접</option>
+                  <option value="가공">가공</option>
+                  <option value="조립">조립</option>
+                </select>
+              ) : (
+                <div className="p-2 bg-gray-50 rounded min-h-[32px]">{(modalItem as any).category || '-'}</div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1">중요도</label>
+              {modalEditMode ? (
+                <select
+                  className="border rounded p-1 w-full"
+                  value={(modalItem as any).priority || ''}
+                  onChange={e => onItemChange({ ...modalItem, priority: e.target.value } as any)}
+                >
+                  <option value="">중요도 선택</option>
+                  <option value="최상">최상</option>
+                  <option value="상">상</option>
+                  <option value="중">중</option>
+                  <option value="하">하</option>
+                  <option value="최하">최하</option>
+                </select>
+              ) : (
+                <div className="p-2 bg-gray-50 rounded min-h-[32px]">{(modalItem as any).priority || '-'}</div>
+              )}
+            </div>
           </div>
           
           {/* 첨부파일 */}
@@ -189,23 +190,26 @@ const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
           <div className="flex gap-2 mt-4">
             {modalEditMode ? (
               <>
-                <button className="px-3 py-1 bg-blue-500 text-white rounded" onClick={onSave}>
+                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onSave}>
                   저장
                 </button>
-                <button className="px-3 py-1 bg-gray-300 text-black rounded" onClick={onEditModeToggle}>
+                <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onEditModeToggle}>
                   취소
+                </button>
+                <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
+                  삭제
                 </button>
               </>
             ) : (
               <>
-                <button className="px-3 py-1 bg-yellow-500 text-white rounded" onClick={onEditModeToggle}>
+                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onEditModeToggle}>
                   수정
                 </button>
-                <button className="px-3 py-1 bg-red-500 text-white rounded" onClick={onDelete}>
-                  삭제
-                </button>
-                <button className="px-3 py-1 bg-gray-300 text-black rounded" onClick={onClose}>
+                <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onClose}>
                   닫기
+                </button>
+                <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
+                  삭제
                 </button>
               </>
             )}
