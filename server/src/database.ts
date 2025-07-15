@@ -5,13 +5,15 @@ import { ChecklistItem } from './entities/ChecklistItem';
 import { Attachment } from './entities/Attachment';
 import { Comment } from './entities/Comment';
 import { History } from './entities/History';
+import { Model } from './entities/Model';
+import { Option } from './entities/Option';
 
 export const AppDataSource = new DataSource({
   type: 'sqlite',
   database: 'database.sqlite',
   synchronize: true,
   logging: true,
-  entities: [User, TreeNode, ChecklistItem, Attachment, Comment, History],
+  entities: [User, TreeNode, ChecklistItem, Attachment, Comment, History, Model, Option],
   subscribers: [],
   migrations: [],
 });

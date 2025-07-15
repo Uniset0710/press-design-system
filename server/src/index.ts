@@ -8,6 +8,8 @@ import treeRouter from './routes/tree';
 import attachmentsRouter from './routes/attachments';
 import checklistRouter from './routes/checklist';
 import commentsRouter from './routes/comments';
+import modelsRouter from './routes/models';
+import optionsRouter from './routes/options';
 import { authMiddleware } from './middleware/auth';
 
 dotenv.config();
@@ -42,6 +44,8 @@ app.use('/api/tree', authMiddleware, treeRouter);
 app.use('/api/attachments', authMiddleware, attachmentsRouter);
 app.use('/api/checklist', authMiddleware, checklistRouter);
 app.use('/api/comments', authMiddleware, commentsRouter);
+app.use('/api/models', authMiddleware, modelsRouter);
+app.use('/api/options', authMiddleware, optionsRouter);
 
 // 보호된 라우트 예시
 app.get('/api/protected', authMiddleware, (req, res) => {

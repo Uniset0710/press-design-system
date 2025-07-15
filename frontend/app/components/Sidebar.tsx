@@ -56,6 +56,7 @@ interface SidebarProps {
   onSetSearchTerm: (term: string) => void;
   onSetIsEditMode: (mode: boolean) => void;
   onSetSidebarWidth: (width: number) => void;
+  isAdmin?: boolean;
 }
 
 export default function Sidebar({
@@ -85,6 +86,7 @@ export default function Sidebar({
   onSetSearchTerm,
   onSetIsEditMode,
   onSetSidebarWidth,
+  isAdmin,
 }: SidebarProps) {
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -119,7 +121,7 @@ export default function Sidebar({
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Press Tree</h2>
-          <div className="flex space-x-2">
+          {isAdmin && (
             <button
               onClick={() => onSetIsEditMode(!isEditMode)}
               className={`px-3 py-1 text-sm rounded ${
@@ -130,7 +132,7 @@ export default function Sidebar({
             >
               {isEditMode ? 'View' : 'Edit'}
             </button>
-          </div>
+          )}
         </div>
 
         <div className="mb-4">
@@ -143,7 +145,7 @@ export default function Sidebar({
           />
         </div>
 
-        {isEditMode && (
+        {isEditMode && isAdmin && (
           <div className="space-y-3 mb-4">
             <div>
               <input
@@ -208,6 +210,7 @@ export default function Sidebar({
           onDelete={onDelete}
           onReorder={onReorder}
           onToggleAssembly={onToggleAssembly}
+          isAdmin={isAdmin}
         />
       </div>
 

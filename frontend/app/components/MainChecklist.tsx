@@ -12,17 +12,19 @@ import { useChecklistData } from '../../hooks/useChecklistData';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import ItemToolbar from '../../components/checklist/ItemToolbar';
 
 interface MainChecklistProps {
   selectedPart: Part | null;
   selectedPartId: string;
   checklistData: Record<string, ChecklistItem[]>;
   setChecklistData: (data: Record<string, ChecklistItem[]>) => void;
-  mutateChecklist: () => void;
+  mutateChecklist?: (...args: any[]) => void;
   attachmentsCache: Record<string, AttachmentData[]>;
   setAttachmentsCache: (cache: Record<string, AttachmentData[]>) => void;
   onFileUpload: (file: File, item: ChecklistItem) => Promise<void>;
   onDeleteAttachment: (attachmentId: string) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 export default function MainChecklist({
@@ -35,6 +37,7 @@ export default function MainChecklist({
   setAttachmentsCache,
   onFileUpload,
   onDeleteAttachment,
+  isAdmin,
 }: MainChecklistProps) {
   const { data: session } = useSession();
   const [modalItem, setModalItem] = useState<ChecklistItem | null>(null);
@@ -430,20 +433,15 @@ export default function MainChecklist({
       {/* 입력 폼 */}
       <div className="p-4 border-b border-gray-100">
         <ChecklistInputForm
-          currentInput={getCurrentSectionInput()}
-          setCurrentInput={patch => setSectionInput(prev => ({
-            ...prev,
-            [sections[currentSectionIndex].title]: { ...getCurrentSectionInput(), ...patch },
-          }))}
-          onAdd={() => {
-            const selectedSection = getCurrentSectionInput().section || sections[currentSectionIndex].title;
-            handleAddChecklistWithSection(selectedSection);
-          }}
+          currentInput={currentInput}
+          setCurrentInput={setCurrentInput}
+          onAdd={() => handleAddChecklistWithSection(selectedChecklistSection)}
           options={options}
           allSelected={allSelected}
           handleToggleAll={handleToggleAll}
           sections={sections}
           currentSectionIndex={currentSectionIndex}
+          isAdmin={isAdmin}
         />
       </div>
 
@@ -560,6 +558,7 @@ export default function MainChecklist({
           onDeleteAttachment={onDeleteAttachment}
           onImagePreview={setImagePreview}
           onImagePreviewClose={() => setImagePreview(null)}
+          isAdmin={isAdmin}
         />
       )}
     </div>

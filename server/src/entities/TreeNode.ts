@@ -28,6 +28,9 @@ export class TreeNode {
   @Column({ type: 'int', default: 0 })
   order!: number;
 
+  @Column({ nullable: true })
+  model?: string; // 트리 노드가 속한 모델
+
   @ManyToOne(() => TreeNode, node => node.children, { nullable: true })
   parent?: TreeNode;
 

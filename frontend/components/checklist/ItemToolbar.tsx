@@ -4,12 +4,14 @@ interface ItemToolbarProps {
   onStartEdit: () => void;
   onDelete: () => void;
   onAttach: (file: File) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 const ItemToolbar: React.FC<ItemToolbarProps> = ({
   onStartEdit,
   onDelete,
   onAttach,
+  isAdmin,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -25,15 +27,19 @@ const ItemToolbar: React.FC<ItemToolbarProps> = ({
 
   return (
     <div className='flex gap-2 mb-2'>
-      <button
-        onClick={onStartEdit}
-        className='text-blue-500 hover:text-blue-700'
-      >
-        수정
-      </button>
-      <button onClick={onDelete} className='text-red-500 hover:text-red-700'>
-        삭제
-      </button>
+      {isAdmin && (
+        <>
+          <button
+            onClick={onStartEdit}
+            className='text-blue-500 hover:text-blue-700'
+          >
+            수정
+          </button>
+          <button onClick={onDelete} className='text-red-500 hover:text-red-700'>
+            삭제
+          </button>
+        </>
+      )}
       <input
         ref={fileInputRef}
         type='file'

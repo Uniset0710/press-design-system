@@ -20,6 +20,7 @@ export interface ChecklistItem {
   optionType: string;
   description: string;
   attachments: AttachmentData[]; // 필수 필드, 빈 배열 기본값
+  model?: string; // 체크리스트 항목이 속한 모델
 }
 
 export type ChecklistData = Record<string, ChecklistItem[]>;
@@ -33,6 +34,14 @@ export interface AttachmentResponse {
   mimeType: string;
   size: number;
   createdAt: string;
+}
+
+// 사용자 타입 정의
+export interface User {
+  id: number;
+  username: string;
+  role: 'admin' | 'user';
+  model?: string;
 }
 
 // 커스텀 에러 클래스

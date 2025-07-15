@@ -41,16 +41,12 @@ interface TreeViewProps {
   onDelete: (type: 'part' | 'assembly', id: string) => void;
   onReorder: (
     type: 'moveAssembly' | 'movePart',
-    payload: {
-      nodeId: string;
-      assemblyId?: string;
-      fromIndex: number;
-      toIndex: number;
-    }
+    payload: any
   ) => void;
   editMode?: boolean;
   assemblyExpanded: Record<string, boolean>;
   onToggleAssembly: (assemblyId: string) => void;
+  isAdmin?: boolean;
 }
 
 export default function TreeView({
@@ -64,6 +60,7 @@ export default function TreeView({
   editMode = false,
   assemblyExpanded,
   onToggleAssembly,
+  isAdmin,
 }: TreeViewProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -198,13 +195,15 @@ export default function TreeView({
       <li ref={setNodeRef} style={style} className='list-none mb-2'>
         <div className='group flex items-center'>
           {/* drag handle */}
-          <span
-            {...attributes}
-            {...listeners}
-            className='cursor-move mr-2 select-none'
-          >
-            ≡
-          </span>
+          {isAdmin && (
+            <span
+              {...attributes}
+              {...listeners}
+              className='cursor-move mr-2 select-none'
+            >
+              ≡
+            </span>
+          )}
           <div className='flex-1'>
             {isEditing ? (
               <div
@@ -250,7 +249,7 @@ export default function TreeView({
               >
                 <span className='mr-2'>{expanded ? '▾' : '▸'}</span>
                 <span>{assembly.name}</span>
-                {editMode && (
+                {editMode && isAdmin && (
                   <div className='flex gap-2'>
                     <button
                       type='button'
@@ -267,7 +266,9 @@ export default function TreeView({
                       className='text-red-600'
                       onClick={e => {
                         e.stopPropagation();
-                        onDelete('assembly', assembly.id);
+                        if (window.confirm('정말로 이 조립체를 삭제하시겠습니까?')) {
+                          onDelete('assembly', assembly.id);
+                        }
                       }}
                     >
                       Delete
@@ -332,13 +333,15 @@ export default function TreeView({
         className={`flex items-center p-1 hover:bg-gray-100 rounded ${selectedPartId === part.id ? 'bg-blue-100' : ''}`}
       >
         {/* Drag handle */}
-        <span
-          {...attributes}
-          {...listeners}
-          className='cursor-move mr-2 select-none'
-        >
-          ≡
-        </span>
+        {isAdmin && (
+          <span
+            {...attributes}
+            {...listeners}
+            className='cursor-move mr-2 select-none'
+          >
+            ≡
+          </span>
+        )}
         <div
           className='flex-1 flex items-center justify-between'
           onClick={e => {
@@ -385,7 +388,7 @@ export default function TreeView({
           ) : (
             <>
               <span>{part.name}</span>
-              {editMode && (
+              {editMode && isAdmin && (
                 <div className='flex gap-2'>
                   <button
                     type='button'
@@ -404,7 +407,9 @@ export default function TreeView({
                     onClick={e => {
                       e.stopPropagation();
                       e.preventDefault();
-                      onDelete('part', part.id);
+                      if (window.confirm('정말로 이 부품을 삭제하시겠습니까?')) {
+                        onDelete('part', part.id);
+                      }
                     }}
                   >
                     Delete

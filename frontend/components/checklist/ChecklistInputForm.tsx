@@ -27,6 +27,7 @@ interface ChecklistInputFormProps {
   handleToggleAll: () => void;
   sections: { title: string; options: string[] }[]; // 섹션 목록 추가
   currentSectionIndex: number; // 현재 섹션 인덱스 추가
+  isAdmin?: boolean;
 }
 
 const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
@@ -38,6 +39,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
   handleToggleAll,
   sections,
   currentSectionIndex,
+  isAdmin,
 }) => {
   return (
     <div
@@ -143,12 +145,14 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
       </div>
 
       {/* Add button */}
-      <button
-        className='bg-blue-500 text-white py-1 px-3 rounded'
-        onClick={onAdd}
-      >
-        Add Item
-      </button>
+      {isAdmin && (
+        <button
+          className='bg-blue-500 text-white py-1 px-3 rounded'
+          onClick={onAdd}
+        >
+          Add Item
+        </button>
+      )}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { TreeNode } from './TreeNode';
 import { Comment } from './Comment';
+import { Model } from './Model';
 
 @Entity()
 export class ChecklistItem {
@@ -45,6 +46,15 @@ export class ChecklistItem {
 
   @Column({ nullable: true })
   priority?: string;
+
+  @Column({ nullable: true })
+  model?: string; // 체크리스트 항목이 속한 모델 (기존 호환성)
+
+  @Column({ nullable: true })
+  modelId?: string; // 기종별 필터링을 위한 모델 ID
+
+  @ManyToOne(() => Model, { nullable: true })
+  modelEntity?: Model; // 기종 엔티티와의 관계
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;

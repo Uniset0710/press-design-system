@@ -3,6 +3,7 @@ export interface User {
   username: string;
   password: string;
   role: 'admin' | 'user';
+  model?: string;
 }
 
 export interface LoginRequest {

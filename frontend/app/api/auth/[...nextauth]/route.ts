@@ -34,6 +34,7 @@ export const authOptions: AuthOptions = {
             name: data.user.username,
             email: null,
             token: data.token,
+            role: data.user.role, // role 추가
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -44,14 +45,21 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user?.token) {
-        token.accessToken = user.token;
+      if ((user as any)?.token) {
+        token.accessToken = (user as any).token;
+      }
+      if ((user as any)?.role) {
+        token.role = (user as any).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.accessToken) {
         session.accessToken = token.accessToken;
+      }
+      if ((token as any)?.role) {
+        session.user = session.user || {};
+        (session.user as any).role = (token as any).role;
       }
       return session;
     },

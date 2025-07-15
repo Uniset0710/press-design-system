@@ -16,6 +16,7 @@ interface ChecklistItemModalProps {
   onDeleteAttachment: (attachmentId: string) => void;
   onImagePreview: (url: string) => void;
   onImagePreviewClose: () => void;
+  isAdmin?: boolean;
 }
 
 const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
@@ -30,7 +31,8 @@ const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
   onFileUpload,
   onDeleteAttachment,
   onImagePreview,
-  onImagePreviewClose
+  onImagePreviewClose,
+  isAdmin,
 }) => {
   if (!modalItem) return null;
 
@@ -188,30 +190,32 @@ const ChecklistItemModal: React.FC<ChecklistItemModalProps> = ({
 
           {/* 버튼 그룹 */}
           <div className="flex gap-2 mt-4">
-            {modalEditMode ? (
-              <>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onSave}>
-                  저장
-                </button>
-                <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onEditModeToggle}>
-                  취소
-                </button>
-                <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
-                  삭제
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onEditModeToggle}>
-                  수정
-                </button>
-                <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onClose}>
-                  닫기
-                </button>
-                <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
-                  삭제
-                </button>
-              </>
+            {isAdmin && (
+              modalEditMode ? (
+                <>
+                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onSave}>
+                    저장
+                  </button>
+                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onEditModeToggle}>
+                    취소
+                  </button>
+                  <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
+                    삭제
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm font-semibold" onClick={onEditModeToggle}>
+                    수정
+                  </button>
+                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded border border-gray-300" onClick={onClose}>
+                    닫기
+                  </button>
+                  <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow-sm" onClick={onDelete}>
+                    삭제
+                  </button>
+                </>
+              )
             )}
           </div>
         </div>

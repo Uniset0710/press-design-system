@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ChecklistItem } from '@/app/types/checklist';
+import { checklistApiRequest } from '@/utils/errorHandler';
 
 interface CachedChecklist {
   data: Record<string, ChecklistItem[]>;
   fetchedAt: number;
 }
 
-export function useChecklistData(selectedPartId: string, session: any) {
+export function useChecklistData(selectedPartId: string, session: any, modelId?: string) {
   const [checklistData, setChecklistData] = useState<
     Record<string, ChecklistItem[]>
   >({
@@ -51,7 +52,8 @@ export function useChecklistData(selectedPartId: string, session: any) {
       return;
     }
 
-    const hit = getCached(selectedPartId);
+    const cacheKey = `${selectedPartId}-${modelId || 'all'}`;
+    const hit = getCached(cacheKey);
     if (hit) {
       setChecklistData(hit.data);
       return;
@@ -63,11 +65,11 @@ export function useChecklistData(selectedPartId: string, session: any) {
       'Assembly Check List': [],
     });
     
-    fetch(`/api/checklist/${selectedPartId}`, {
+    // 기종별 필터링을 지원하는 API 요청
+    checklistApiRequest(`/api/checklist/${selectedPartId}`, modelId, {
       headers: { Authorization: `Bearer ${session?.accessToken}` },
-    })
-      .then(res => res.json())
-      .then(data => {
+    }, session)
+      .then((data: any) => {
         console.log('Raw checklist data:', data); // 디버깅용
         
         // 백엔드에서 받은 데이터를 섹션별로 분류
@@ -111,7 +113,7 @@ export function useChecklistData(selectedPartId: string, session: any) {
         setChecklistData(sectionedData);
         setChecklistCache(prev => ({
           ...prev,
-          [selectedPartId]: { data: sectionedData, fetchedAt: Date.now() },
+          [cacheKey]: { data: sectionedData, fetchedAt: Date.now() },
         }));
       })
       .catch(error => {
@@ -122,7 +124,7 @@ export function useChecklistData(selectedPartId: string, session: any) {
           'Assembly Check List': [],
         });
       });
-  }, [selectedPartId, session]);
+  }, [selectedPartId, session, modelId]); // modelId를 의존성에 추가
 
   return {
     checklistData,

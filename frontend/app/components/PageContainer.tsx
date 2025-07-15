@@ -8,6 +8,7 @@ import { PressNode, Part } from './TreeView';
 import Sidebar from './Sidebar';
 import MainChecklist from './MainChecklist';
 import { useChecklistData } from '../../hooks/useChecklistData';
+import { Model as ModelType } from '@/types/model';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002';
 
@@ -18,15 +19,18 @@ interface CachedChecklist {
 
 export default function PageContainer() {
   const { data: session, status } = useSession();
-  console.log('useSession status:', status, session);
+  console.log('세션 정보:', session);
   const router = useRouter();
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [treeData, setTreeData] = useState<PressNode[]>([]);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const [selectedPartId, setSelectedPartId] = useState<string>('');
+  const [models, setModels] = useState<ModelType[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>('');
   const { checklistData, setChecklistData, mutateChecklist } = useChecklistData(
     selectedPartId,
-    session
+    session,
+    selectedModelId // modelId 전달
   );
   const [attachmentsCache, setAttachmentsCache] = useState<
     Record<string, AttachmentData[]>
@@ -40,6 +44,10 @@ export default function PageContainer() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [assemblyExpanded, setAssemblyExpanded] = useState<Record<string, boolean>>({});
+
+  const isAdmin = typeof session?.user === 'object' && (
+    (session.user as any).role === 'admin' || (session.user as any).isAdmin === true
+  );
 
   const fetchTreeData = async (): Promise<PressNode[]> => {
     try {
@@ -314,6 +322,26 @@ export default function PageContainer() {
     loadData();
   }, [status, session]);
 
+  useEffect(() => {
+    // 모델 목록 불러오기
+    fetch('/api/models')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setModels(data);
+          if (data.length > 0 && !selectedModelId) {
+            setSelectedModelId(String(data[0].id));
+          }
+        } else {
+          setModels([]);
+        }
+      })
+      .catch(err => {
+        setModels([]);
+        console.error('모델 목록 불러오기 실패:', err);
+      });
+  }, []);
+
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -348,7 +376,7 @@ export default function PageContainer() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-full">
       <Sidebar
         treeData={treeData}
         selectedPart={selectedPart}
@@ -376,18 +404,38 @@ export default function PageContainer() {
         onSetSearchTerm={setSearchTerm}
         onSetIsEditMode={setIsEditMode}
         onSetSidebarWidth={setSidebarWidth}
+        isAdmin={isAdmin}
       />
-      <MainChecklist
-        selectedPart={selectedPart}
-        selectedPartId={selectedPartId}
-        checklistData={checklistData}
-        setChecklistData={setChecklistData}
-        mutateChecklist={mutateChecklist}
-        attachmentsCache={attachmentsCache}
-        setAttachmentsCache={setAttachmentsCache}
-        onFileUpload={handleFileUpload}
-        onDeleteAttachment={handleDeleteAttachment}
-      />
+      <div className="flex-1 flex flex-col">
+        {/* 모델 선택 드롭다운 */}
+        <div className="p-4 border-b bg-gray-50 flex items-center space-x-4">
+          <label htmlFor="model-select" className="font-semibold text-gray-700">기종 선택:</label>
+          <select
+            id="model-select"
+            value={selectedModelId}
+            onChange={e => setSelectedModelId(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {(Array.isArray(models) ? models : []).map(model => (
+              <option key={model.id} value={model.id}>
+                {model.name} ({model.code})
+              </option>
+            ))}
+          </select>
+        </div>
+        <MainChecklist
+          selectedPart={selectedPart}
+          selectedPartId={selectedPartId}
+          checklistData={checklistData}
+          setChecklistData={setChecklistData}
+          mutateChecklist={mutateChecklist}
+          attachmentsCache={attachmentsCache}
+          setAttachmentsCache={setAttachmentsCache}
+          onFileUpload={handleFileUpload}
+          onDeleteAttachment={handleDeleteAttachment}
+          isAdmin={isAdmin}
+        />
+      </div>
     </div>
   );
 } 

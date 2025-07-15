@@ -18,6 +18,9 @@ export class User {
   })
   role!: 'admin' | 'user';
 
+  @Column({ nullable: true })
+  model?: string; // 사용자가 접근할 수 있는 모델
+
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
 
