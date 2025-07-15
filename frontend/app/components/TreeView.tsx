@@ -16,6 +16,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import PermissionGuard from './PermissionGuard';
 
 export interface Part {
   id: string;
@@ -261,18 +262,22 @@ export default function TreeView({
                     >
                       Edit
                     </button>
-                    <button
-                      type='button'
-                      className='text-red-600'
-                      onClick={e => {
-                        e.stopPropagation();
-                        if (window.confirm('정말로 이 조립체를 삭제하시겠습니까?')) {
-                          onDelete('assembly', assembly.id);
-                        }
-                      }}
+                    <PermissionGuard
+                      requiredRole="admin"
                     >
-                      Delete
-                    </button>
+                      <button
+                        type='button'
+                        className='text-red-600'
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (window.confirm('정말로 이 조립체를 삭제하시겠습니까?')) {
+                            onDelete('assembly', assembly.id);
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </PermissionGuard>
                   </div>
                 )}
               </div>
@@ -401,19 +406,23 @@ export default function TreeView({
                   >
                     Edit
                   </button>
-                  <button
-                    type='button'
-                    className='text-red-600'
-                    onClick={e => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      if (window.confirm('정말로 이 부품을 삭제하시겠습니까?')) {
-                        onDelete('part', part.id);
-                      }
-                    }}
+                  <PermissionGuard
+                    requiredRole="admin"
                   >
-                    Delete
-                  </button>
+                    <button
+                      type='button'
+                      className='text-red-600'
+                      onClick={e => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (window.confirm('정말로 이 부품을 삭제하시겠습니까?')) {
+                          onDelete('part', part.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </PermissionGuard>
                 </div>
               )}
             </>

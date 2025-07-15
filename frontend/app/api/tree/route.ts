@@ -5,9 +5,18 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const modelId = searchParams.get('modelId'); // modelId 파라미터 추출
+    
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (session?.accessToken) headers['authorization'] = `Bearer ${session.accessToken}`;
-    const response = await fetch('http://localhost:3002/api/tree', {
+    
+    // modelId가 있으면 백엔드로 전달
+    const backendUrl = modelId 
+      ? `http://localhost:3002/api/tree?modelId=${modelId}`
+      : 'http://localhost:3002/api/tree';
+      
+    const response = await fetch(backendUrl, {
       headers,
       credentials: 'include',
     });

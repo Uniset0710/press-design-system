@@ -1,4 +1,6 @@
 import React from 'react';
+import Button from '../common/Button';
+import Textarea from '../common/Textarea';
 
 interface EditFormProps {
   text: string;
@@ -15,25 +17,26 @@ const EditForm: React.FC<EditFormProps> = ({
 
   return (
     <div className='flex flex-col gap-2'>
-      <textarea
-        className='w-full p-2 border rounded'
+      <Textarea
         value={editText}
         onChange={e => setEditText(e.target.value)}
         autoFocus
       />
       <div className='flex justify-end gap-2'>
-        <button
+        <Button
           onClick={() => onSave(editText)}
-          className='px-3 py-1 text-green-500 hover:text-green-600 border rounded'
+          variant="success"
+          size="sm"
         >
           저장
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onCancel}
-          className='px-3 py-1 text-gray-500 hover:text-gray-600 border rounded'
+          variant="secondary"
+          size="sm"
         >
           취소
-        </button>
+        </Button>
       </div>
     </div>
   );

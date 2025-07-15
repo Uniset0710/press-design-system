@@ -51,7 +51,12 @@ export default function PageContainer() {
 
   const fetchTreeData = async (): Promise<PressNode[]> => {
     try {
-      const response = await fetch(`${API_BASE}/api/tree`, {
+      // modelId가 있으면 쿼리 파라미터로 추가
+      const url = selectedModelId 
+        ? `${API_BASE}/api/tree?modelId=${selectedModelId}`
+        : `${API_BASE}/api/tree`;
+        
+      const response = await fetch(url, {
         headers: {
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
@@ -320,7 +325,7 @@ export default function PageContainer() {
     };
 
     loadData();
-  }, [status, session]);
+  }, [status, session, selectedModelId]); // selectedModelId 의존성 추가
 
   useEffect(() => {
     // 모델 목록 불러오기
