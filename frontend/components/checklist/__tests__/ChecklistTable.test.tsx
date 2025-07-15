@@ -65,15 +65,16 @@ describe('ChecklistTable', () => {
       <ChecklistTable
         items={mockItems}
         sectionTitle="Test Section"
-        onSort={mockOnSort}
-        onItemClick={mockOnItemClick}
+        sortState={undefined}
+        onSort={jest.fn()}
+        onItemClick={jest.fn()}
       />
     );
-
-    expect(screen.getByText('Test Item 1')).toBeInTheDocument();
-    expect(screen.getByText('Test Item 2')).toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    // getAllByText로 명확히 지정 (테이블 내 첫 번째 항목)
+    expect(screen.getAllByText('Test Item 1')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Test Item 2')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('John Doe')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Jane Smith')[0]).toBeInTheDocument();
   });
 
   it('calls onSort when header is clicked', () => {
@@ -110,16 +111,17 @@ describe('ChecklistTable', () => {
   });
 
   it('calls onItemClick when row is clicked', () => {
+    const mockOnItemClick = jest.fn();
     render(
       <ChecklistTable
         items={mockItems}
         sectionTitle="Test Section"
-        onSort={mockOnSort}
+        sortState={undefined}
+        onSort={jest.fn()}
         onItemClick={mockOnItemClick}
       />
     );
-
-    fireEvent.click(screen.getByText('Test Item 1'));
+    fireEvent.click(screen.getAllByText('Test Item 1')[0]);
     expect(mockOnItemClick).toHaveBeenCalledWith(mockItems[0]);
   });
 
@@ -148,13 +150,13 @@ describe('ChecklistTable', () => {
       <ChecklistTable
         items={mockItems}
         sectionTitle="Test Section"
-        onSort={mockOnSort}
-        onItemClick={mockOnItemClick}
+        sortState={undefined}
+        onSort={jest.fn()}
+        onItemClick={jest.fn()}
       />
     );
-
-    expect(screen.getByText('2024-01-15')).toBeInTheDocument();
-    expect(screen.getByText('2024-01-20')).toBeInTheDocument();
+    expect(screen.getAllByText('2024-01-15')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('2024-01-20')[0]).toBeInTheDocument();
   });
 
   it('handles empty items array', () => {

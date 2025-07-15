@@ -15,6 +15,12 @@ interface SelectProps {
   required?: boolean;
   name?: string;
   id?: string;
+  fullWidth?: boolean;
+  // 접근성 속성 추가
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
+  'aria-required'?: boolean;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -27,11 +33,18 @@ const Select: React.FC<SelectProps> = ({
   required = false,
   name,
   id,
+  fullWidth = true,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedby,
+  'aria-invalid': ariaInvalid,
+  'aria-required': ariaRequired,
 }) => {
-  const baseClasses = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  const baseClasses = 'px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed' : '';
+  const invalidClasses = ariaInvalid ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : '';
+  const widthClasses = fullWidth ? 'w-full' : '';
   
-  const classes = `${baseClasses} ${disabledClasses} ${className}`;
+  const classes = `${baseClasses} ${disabledClasses} ${invalidClasses} ${widthClasses} ${className}`;
   
   return (
     <select
@@ -42,6 +55,10 @@ const Select: React.FC<SelectProps> = ({
       required={required}
       name={name}
       id={id}
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedby}
+      aria-invalid={ariaInvalid}
+      aria-required={ariaRequired}
     >
       {placeholder && (
         <option value="" disabled>

@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Button from './common/Button';
+import Textarea from './common/Textarea';
 
 interface ChecklistContentProps {
   text: string;
@@ -37,26 +39,32 @@ const ChecklistContent: React.FC<ChecklistContentProps> = ({
   if (isEditing) {
     return (
       <div className="flex flex-col gap-2">
-        <textarea
+        <Textarea
           value={editText}
           onChange={handleTextChange}
-          className="w-full p-2 border rounded"
           rows={3}
           autoFocus
+          aria-label="체크리스트 내용 편집"
+          aria-describedby="checklist-content-description"
         />
+        <div id="checklist-content-description" className="sr-only">
+          체크리스트 내용을 편집할 수 있습니다. 저장 버튼을 눌러 변경사항을 저장하거나 취소 버튼을 눌러 편집을 취소할 수 있습니다.
+        </div>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={onSave}
-            className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
+            variant="primary"
+            aria-label="변경사항 저장"
           >
             저장
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+            variant="secondary"
+            aria-label="편집 취소"
           >
             취소
-          </button>
+          </Button>
         </div>
       </div>
     );

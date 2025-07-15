@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ChecklistRow from '../ChecklistRow';
 import { ChecklistItem } from '@/app/types/checklist';
-import { ChecklistProvider } from '@/context/ChecklistContext';
 
 const mockItem: ChecklistItem = {
   id: '1',
@@ -28,13 +27,11 @@ describe('ChecklistRow', () => {
 
   it('renders item data correctly', () => {
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={mockItem} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={mockItem} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
 
     expect(screen.getByText('Test Item')).toBeInTheDocument();
@@ -44,13 +41,11 @@ describe('ChecklistRow', () => {
 
   it('calls onClick when row is clicked', () => {
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={mockItem} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={mockItem} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
 
     fireEvent.click(screen.getByText('Test Item'));
@@ -65,13 +60,11 @@ describe('ChecklistRow', () => {
     };
 
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={itemWithDescription} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={itemWithDescription} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     expect(screen.getByText('Test Description')).toBeInTheDocument();
   });
@@ -86,26 +79,22 @@ describe('ChecklistRow', () => {
     };
 
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={itemWithAttachments} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={itemWithAttachments} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     expect(screen.getByText('📎 2')).toBeInTheDocument();
   });
 
   it('displays dash when no attachments', () => {
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={mockItem} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={mockItem} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     // Check for attachment column dash specifically
     const attachmentCell = screen.getByText('Test Item').closest('tr')?.querySelector('td:last-child');
@@ -115,13 +104,11 @@ describe('ChecklistRow', () => {
   it('displays dash when author is missing', () => {
     const itemWithoutAuthor = { ...mockItem, author: undefined };
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={itemWithoutAuthor} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={itemWithoutAuthor} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     // Check for author column dash specifically
     const authorCell = screen.getByText('Test Item').closest('tr')?.querySelector('td:nth-child(2)');
@@ -131,13 +118,11 @@ describe('ChecklistRow', () => {
   it('displays dash when dueDate is missing', () => {
     const itemWithoutDueDate = { ...mockItem, dueDate: undefined };
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={itemWithoutDueDate} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={itemWithoutDueDate} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     // Check for dueDate column dash specifically
     const dueDateCell = screen.getByText('Test Item').closest('tr')?.querySelector('td:nth-child(3)');
@@ -147,26 +132,22 @@ describe('ChecklistRow', () => {
   it('formats due date correctly', () => {
     const itemWithLongDate = { ...mockItem, dueDate: '2024-01-15T10:30:00Z' };
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={itemWithLongDate} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={itemWithLongDate} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     expect(screen.getByText('2024-01-15')).toBeInTheDocument();
   });
 
   it('has correct CSS classes for styling', () => {
     render(
-      <ChecklistProvider>
-        <table>
-          <tbody>
-            <ChecklistRow item={mockItem} onClick={mockOnClick} />
-          </tbody>
-        </table>
-      </ChecklistProvider>
+      <table>
+        <tbody>
+          <ChecklistRow item={mockItem} onClick={mockOnClick} />
+        </tbody>
+      </table>
     );
     
     const row = screen.getByText('Test Item').closest('tr');

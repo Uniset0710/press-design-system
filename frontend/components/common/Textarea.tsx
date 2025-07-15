@@ -13,6 +13,12 @@ interface TextareaProps {
   cols?: number;
   maxLength?: number;
   autoFocus?: boolean;
+  fullWidth?: boolean;
+  // 접근성 속성 추가
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
+  'aria-required'?: boolean;
 }
 
 const Textarea: React.FC<TextareaProps> = ({
@@ -28,11 +34,19 @@ const Textarea: React.FC<TextareaProps> = ({
   cols,
   maxLength,
   autoFocus = false,
+  fullWidth = true,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedby,
+  'aria-invalid': ariaInvalid,
+  'aria-required': ariaRequired,
+  ...props
 }) => {
-  const baseClasses = 'w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical';
+  const baseClasses = 'p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical transition-colors text-sm sm:text-base';
   const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed' : '';
+  const invalidClasses = ariaInvalid ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : '';
+  const widthClasses = fullWidth ? 'w-full' : '';
   
-  const classes = `${baseClasses} ${disabledClasses} ${className}`;
+  const classes = `${baseClasses} ${disabledClasses} ${invalidClasses} ${widthClasses} ${className}`;
   
   return (
     <textarea
@@ -48,6 +62,11 @@ const Textarea: React.FC<TextareaProps> = ({
       cols={cols}
       maxLength={maxLength}
       autoFocus={autoFocus}
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedby}
+      aria-invalid={ariaInvalid}
+      aria-required={ariaRequired}
+      {...props}
     />
   );
 };

@@ -2,7 +2,7 @@ import express from 'express';
 import { AppDataSource } from '../database';
 import { ChecklistItem } from '../entities/ChecklistItem';
 import { History } from '../entities/History';
-import { authMiddleware, modelAccessMiddleware, roleMiddleware, AuthRequest } from '../middleware/auth';
+import { authMiddleware, modelAccessMiddleware, roleMiddleware, modelIdWriteMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const repo = AppDataSource.getRepository(ChecklistItem);
@@ -70,7 +70,7 @@ router.get('/:partId', async (req: AuthRequest, res) => {
 });
 
 // POST /api/checklist/:partId - create a new checklist item
-router.post('/:partId', roleMiddleware(['admin', 'user']), async (req: AuthRequest, res) => {
+router.post('/:partId', modelIdWriteMiddleware, roleMiddleware(['admin', 'user']), async (req: AuthRequest, res) => {
   const partId = parseInt(req.params.partId, 10);
   if (isNaN(partId)) {
     return res.status(400).json({ message: 'Invalid partId' });
@@ -128,7 +128,7 @@ router.post('/:partId', roleMiddleware(['admin', 'user']), async (req: AuthReque
 });
 
 // PUT /api/checklist/:itemId - update a checklist item
-router.put('/:itemId', roleMiddleware(['admin', 'user']), async (req: AuthRequest, res) => {
+router.put('/:itemId', modelIdWriteMiddleware, roleMiddleware(['admin', 'user']), async (req: AuthRequest, res) => {
   const itemId = parseInt(req.params.itemId, 10);
   if (isNaN(itemId)) {
     return res.status(400).json({ message: 'Invalid itemId' });
@@ -206,7 +206,7 @@ router.put('/:itemId', roleMiddleware(['admin', 'user']), async (req: AuthReques
 });
 
 // DELETE /api/checklist/:itemId - delete a checklist item
-router.delete('/:itemId', roleMiddleware(['admin']), async (req, res) => {
+router.delete('/:itemId', modelIdWriteMiddleware, roleMiddleware(['admin']), async (req, res) => {
   const itemId = parseInt(req.params.itemId, 10);
   if (isNaN(itemId)) {
     return res.status(400).json({ message: 'Invalid itemId' });

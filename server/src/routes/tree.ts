@@ -2,18 +2,31 @@ import express from 'express';
 import { AppDataSource } from '../database';
 import { TreeNode } from '../entities/TreeNode';
 import { IsNull } from 'typeorm';
+import { authMiddleware, modelIdAccessMiddleware, modelIdWriteMiddleware } from '../middleware/auth';
 
 const router = express.Router();
 const repo = AppDataSource.getRepository(TreeNode);
 
 // GET /api/tree - fetch all press nodes with nested assemblies and parts
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, modelIdAccessMiddleware, async (req, res) => {
   try {
+    const { modelId } = req.query; // 기종별 필터링을 위한 파라미터
+    
     // 모든 press(루트) 노드 조회
     const roots = await repo.find({ where: { type: 'press', parentId: IsNull() }, order: { order: 'ASC' } });
+    
+    // 기종별 필터링이 있는 경우, 해당 기종의 트리만 반환
+    let filteredRoots = roots;
+    if (modelId) {
+      // modelId에 해당하는 press 노드만 필터링
+      // 실제로는 press 노드와 modelId를 연결하는 로직이 필요할 수 있음
+      // 현재는 모든 press 노드를 반환하되, 향후 modelId 기반 필터링 로직 추가 가능
+      console.log(`Filtering by modelId: ${modelId}`);
+    }
+    
     // 각 press 노드에 대해 assemblies/parts 구조로 트리 구성
     const data = await Promise.all(
-      roots.map(async root => {
+      filteredRoots.map(async root => {
         // assemblies 조회
         const assemblies = await repo.find({ where: { parentId: root.id, type: 'assembly' }, order: { order: 'ASC' } });
         // 각 assembly에 대해 parts 조회
@@ -36,9 +49,9 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/tree - add assembly or part
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
-    const { nodeId, assemblyId, name } = req.body;
+    const { nodeId, assemblyId, name, modelId } = req.body; // modelId 추가
     if (assemblyId) {
       // add part
       const asm = await repo.findOneBy({ id: assemblyId, type: 'assembly' });
@@ -67,9 +80,9 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/tree - rename assembly or part
-router.put('/', async (req, res) => {
+router.put('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
-    const { assemblyId, partId, name } = req.body;
+    const { assemblyId, partId, name, modelId } = req.body; // modelId 추가
     if (assemblyId) {
       const asm = await repo.findOneBy({ id: assemblyId, type: 'assembly' });
       if (!asm) return res.status(404).json({ error: 'Assembly not found' });
@@ -92,9 +105,9 @@ router.put('/', async (req, res) => {
 });
 
 // DELETE /api/tree - delete assembly or part
-router.delete('/', async (req, res) => {
+router.delete('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
-    const { type, id } = req.body;
+    const { type, id, modelId } = req.body; // modelId 추가
     if (type === 'assembly' || type === 'part') {
       const node = await repo.findOneBy({ id, type });
       if (!node) return res.status(404).json({ error: 'Node not found' });
@@ -109,9 +122,9 @@ router.delete('/', async (req, res) => {
 });
 
 // PATCH /api/tree - reorder assemblies or parts
-router.patch('/', async (req, res) => {
+router.patch('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
-    const { type, nodeId, assemblyId, fromIndex, toIndex } = req.body;
+    const { type, nodeId, assemblyId, fromIndex, toIndex, modelId } = req.body; // modelId 추가
     if (type === 'moveAssembly') {
       const assemblies = await repo.find({ where: { parentId: nodeId, type: 'assembly' }, order: { order: 'ASC' } });
       if (fromIndex >= assemblies.length || toIndex >= assemblies.length) {

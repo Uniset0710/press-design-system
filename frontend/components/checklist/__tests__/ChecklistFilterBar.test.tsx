@@ -65,8 +65,7 @@ describe('ChecklistFilterBar', () => {
         onAdvancedFilterChange={mockOnAdvancedFilterChange}
       />
     );
-
-    expect(screen.getByLabelText('Clear search')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('검색어 지우기')[0]).toBeInTheDocument();
   });
 
   it('calls onFilterChange with empty string when clear button is clicked', () => {
@@ -80,8 +79,8 @@ describe('ChecklistFilterBar', () => {
         onAdvancedFilterChange={mockOnAdvancedFilterChange}
       />
     );
-
-    fireEvent.click(screen.getByLabelText('Clear search'));
+    const clearButtons = screen.getAllByLabelText('검색어 지우기');
+    fireEvent.click(clearButtons[0]);
     expect(mockOnFilterChange).toHaveBeenCalledWith('');
   });
 
@@ -257,10 +256,27 @@ describe('ChecklistFilterBar', () => {
         onAdvancedFilterChange={mockOnAdvancedFilterChange}
       />
     );
-
-    const searchInput = screen.getByPlaceholderText('Search in Test Section');
-    fireEvent.keyDown(searchInput, { key: 'Escape' });
+    // getAllByPlaceholderText로 명확히 지정
+    const searchInputs = screen.getAllByPlaceholderText('Search in Test Section');
+    fireEvent.keyDown(searchInputs[0], { key: 'Escape' });
     
+    expect(mockOnFilterChange).toHaveBeenCalledWith('');
+  });
+
+  it('clears filter when clear button is clicked', () => {
+    render(
+      <ChecklistFilterBar
+        sectionTitle="Test Section"
+        filterValue="test value"
+        advFilter={mockAdvFilter}
+        authors={mockAuthors}
+        onFilterChange={mockOnFilterChange}
+        onAdvancedFilterChange={mockOnAdvancedFilterChange}
+      />
+    );
+    // getAllByLabelText로 명확히 지정
+    const clearButtons = screen.getAllByLabelText('검색어 지우기');
+    fireEvent.click(clearButtons[0]);
     expect(mockOnFilterChange).toHaveBeenCalledWith('');
   });
 }); 

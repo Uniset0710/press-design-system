@@ -96,3 +96,51 @@ export const roleMiddleware = (allowedRoles: string[]) => {
     return;
   };
 };
+
+// 기종별 권한 체크 미들웨어
+export const modelIdAccessMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const modelId = req.params?.modelId || req.body?.modelId || req.query?.modelId;
+
+  // 관리자는 모든 기종에 접근 가능
+  if (req.user?.role === 'admin') {
+    next();
+    return;
+  }
+
+  // modelId가 지정되지 않은 경우 통과
+  if (!modelId) {
+    next();
+    return;
+  }
+
+  // 사용자가 해당 기종에 접근 권한이 있는지 확인
+  // 향후 사용자별 기종 권한 테이블이 추가되면 여기서 체크
+  // 현재는 모든 인증된 사용자가 모든 기종에 접근 가능
+  next();
+  return;
+};
+
+// 기종별 쓰기 권한 체크 미들웨어
+export const modelIdWriteMiddleware = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const modelId = req.params?.modelId || req.body?.modelId || req.query?.modelId;
+
+  // 관리자는 모든 기종에 쓰기 권한
+  if (req.user?.role === 'admin') {
+    next();
+    return;
+  }
+
+  // 일반 사용자는 쓰기 권한 없음
+  res.status(403).json({ 
+    message: '기종별 데이터 수정은 관리자만 가능합니다.' 
+  });
+  return;
+};
