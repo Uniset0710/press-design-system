@@ -66,7 +66,11 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
     });
     
     // 기종별 필터링을 지원하는 API 요청
-    checklistApiRequest(`/api/checklist/${selectedPartId}`, modelId, {
+    const url = modelId 
+      ? `/api/checklist/${selectedPartId}?modelId=${modelId}`
+      : `/api/checklist/${selectedPartId}`;
+      
+    checklistApiRequest(url, undefined, {
       headers: { Authorization: `Bearer ${session?.accessToken}` },
     }, session)
       .then((data: any) => {

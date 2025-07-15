@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 const BACKEND = 'http://localhost:3002';
 
@@ -35,49 +37,123 @@ async function proxy(request: NextRequest, method: string, url: string) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { partId: string } }) {
-  return proxy(request, 'GET', `${BACKEND}/api/checklist/${params.partId}`);
+  try {
+    const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const modelId = searchParams.get('modelId');
+    
+    if (!modelId) {
+      return NextResponse.json(
+        { error: 'modelId 파라미터가 필요합니다' },
+        { status: 400 }
+      );
+    }
+    
+    const url = `${BACKEND}/api/checklist/${params.partId}?modelId=${modelId}`;
+    return proxy(request, 'GET', url);
+  } catch (error) {
+    console.error('Error fetching checklist item:', error);
+    return NextResponse.json(
+      { error: '체크리스트 항목 조회에 실패했습니다' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest, { params }: { params: { partId: string } }) {
-  const body = await request.json();
-  const headers = cloneHeaders(request);
-  headers.set('content-type', 'application/json');
-  const backendRes = await fetch(`${BACKEND}/api/checklist/${params.partId}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-    credentials: 'include',
-  });
-  const contentType = backendRes.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    const data = await backendRes.json();
-    return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
-  } else {
-    const blob = await backendRes.blob();
-    return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+  try {
+    const session = await getServerSession(authOptions);
+    const body = await request.json();
+    
+    if (!body.modelId) {
+      return NextResponse.json(
+        { error: 'modelId가 필요합니다' },
+        { status: 400 }
+      );
+    }
+    
+    const headers = cloneHeaders(request);
+    headers.set('content-type', 'application/json');
+    const backendRes = await fetch(`${BACKEND}/api/checklist/${params.partId}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    const contentType = backendRes.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await backendRes.json();
+      return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
+    } else {
+      const blob = await backendRes.blob();
+      return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+    }
+  } catch (error) {
+    console.error('Error creating checklist item:', error);
+    return NextResponse.json(
+      { error: '체크리스트 항목 생성에 실패했습니다' },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { partId: string } }) {
-  const body = await request.json();
-  const headers = cloneHeaders(request);
-  headers.set('content-type', 'application/json');
-  const backendRes = await fetch(`${BACKEND}/api/checklist/${params.partId}`, {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify(body),
-    credentials: 'include',
-  });
-  const contentType = backendRes.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    const data = await backendRes.json();
-    return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
-  } else {
-    const blob = await backendRes.blob();
-    return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+  try {
+    const session = await getServerSession(authOptions);
+    const body = await request.json();
+    
+    if (!body.modelId) {
+      return NextResponse.json(
+        { error: 'modelId가 필요합니다' },
+        { status: 400 }
+      );
+    }
+    
+    const headers = cloneHeaders(request);
+    headers.set('content-type', 'application/json');
+    const backendRes = await fetch(`${BACKEND}/api/checklist/${params.partId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    const contentType = backendRes.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await backendRes.json();
+      return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
+    } else {
+      const blob = await backendRes.blob();
+      return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+    }
+  } catch (error) {
+    console.error('Error updating checklist item:', error);
+    return NextResponse.json(
+      { error: '체크리스트 항목 수정에 실패했습니다' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { partId: string } }) {
-  return proxy(request, 'DELETE', `${BACKEND}/api/checklist/${params.partId}`);
+  try {
+    const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const modelId = searchParams.get('modelId');
+    
+    if (!modelId) {
+      return NextResponse.json(
+        { error: 'modelId 파라미터가 필요합니다' },
+        { status: 400 }
+      );
+    }
+    
+    const url = `${BACKEND}/api/checklist/${params.partId}?modelId=${modelId}`;
+    return proxy(request, 'DELETE', url);
+  } catch (error) {
+    console.error('Error deleting checklist item:', error);
+    return NextResponse.json(
+      { error: '체크리스트 항목 삭제에 실패했습니다' },
+      { status: 500 }
+    );
+  }
 } 
