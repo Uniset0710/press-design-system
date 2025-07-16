@@ -149,12 +149,12 @@ const ChecklistFilterBar: React.FC<ChecklistFilterBarProps> = ({
 
   // 데스크탑 UI만 렌더링
   return (
-    <div className='relative mb-2 flex gap-2 items-center'>
+    <div className='relative mb-2 flex gap-2 items-center w-full'>
       {/* 검색창 */}
       <div className='relative flex-1'>
         <input
           type='text'
-          className='p-1 border rounded w-full pr-8 h-8 min-w-[120px]'
+          className='p-1 border rounded w-full pr-8 h-8'
           placeholder={`Search in ${sectionTitle}`}
           value={filterValue}
           onChange={e => onFilterChange(e.target.value)}

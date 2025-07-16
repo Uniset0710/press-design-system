@@ -13,12 +13,22 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ItemToolbar from '../../components/checklist/ItemToolbar';
+import { getModelFromCookies } from '@/utils/cookieUtils';
+
+// 쿠키에서 모델 ID를 가져오는 함수
+const getCookie = (name: string): string | undefined => {
+  if (typeof document === 'undefined') return undefined;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return undefined;
+};
 
 interface MainChecklistProps {
   selectedPart: Part | null;
   selectedPartId: string;
   checklistData: Record<string, ChecklistItem[]>;
-  setChecklistData: (data: Record<string, ChecklistItem[]>) => void;
+  setChecklistData: React.Dispatch<React.SetStateAction<Record<string, ChecklistItem[]>>>;
   mutateChecklist?: (...args: any[]) => void;
   attachmentsCache: Record<string, AttachmentData[]>;
   setAttachmentsCache: (cache: Record<string, AttachmentData[]>) => void;
@@ -194,45 +204,56 @@ export default function MainChecklist({
     if (!input?.text.trim() || !selectedPart) return;
 
     try {
-      const response = await fetch(`/api/checklist/${selectedPart.id}`, {
+      // 모델 코드를 쿼리 파라미터로 추가
+      const modelInfo = getModelFromCookies();
+      const modelCode = modelInfo.code;
+      const url = modelCode 
+        ? `/api/checklist/${selectedPart.id}?modelId=${modelCode}`
+        : `/api/checklist/${selectedPart.id}`;
+        
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
         body: JSON.stringify({
-          optionType: input.options[0] || 'DTL', // 첫 번째 옵션을 optionType으로 사용
+          optionType: input.options[0] || 'DTL',
           description: input.text,
           section: sectionTitle,
           author: input.author || session?.user?.name || 'Unknown',
           dueDate: input.dueDate || null,
           category: input.category || 'General',
           priority: input.priority || 'Medium',
+          modelId: modelCode // 모델 코드 추가
         }),
       });
 
-      // 디버깅: 응답 상태 및 본문 출력
-      console.log('Checklist POST status:', response.status);
-      const respText = await response.text();
-      console.log('Checklist POST response:', respText);
       if (!response.ok) {
         throw new Error('Failed to add checklist item');
       }
 
-      const newItem = JSON.parse(respText);
+      const newItem = await response.json();
       
-      // 새 항목에 optionType 추가하여 필터링이 정상 동작하도록 함
-      const itemWithOptionType = {
-        ...newItem,
-        optionType: input.options[0] || 'DTL',
-      };
+      // 새 아이템을 해당 섹션에 추가
+      const optionType = input.options[0] || 'DTL';
+      setChecklistData((prev: Record<string, ChecklistItem[]>) => {
+        const updated: Record<string, ChecklistItem[]> = { ...prev };
+        // 섹션별로 분리된 데이터 구조에 맞게 추가
+        const sectionKey = sectionTitle;
+        if (!updated[sectionKey]) {
+          updated[sectionKey] = [];
+        }
+        updated[sectionKey] = [...updated[sectionKey], {
+          ...newItem,
+          text: newItem.text || newItem.description,
+          optionType: optionType
+        }];
+        return updated;
+      });
 
-      setChecklistData((prev: Record<string, ChecklistItem[]>) => ({
-        ...prev,
-        [sectionTitle]: [...(prev[sectionTitle] || []), itemWithOptionType],
-      }));
-
-      setSectionInput(prev => ({
+      // 입력 필드 초기화
+      setSectionInput((prev: Record<string, any>) => ({
         ...prev,
         [sections[currentSectionIndex].title]: {
           text: '',
@@ -241,7 +262,6 @@ export default function MainChecklist({
           options: [],
           category: '',
           priority: '',
-          section: '',
         },
       }));
 
@@ -281,6 +301,7 @@ export default function MainChecklist({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
         body: JSON.stringify({
           text: newText,
@@ -297,10 +318,18 @@ export default function MainChecklist({
 
       const updatedItem = await response.json();
       setChecklistData((prev: Record<string, ChecklistItem[]>) => {
-        const newData = { ...prev };
+        const newData: Record<string, ChecklistItem[]> = { ...prev };
         Object.keys(newData).forEach(section => {
           newData[section] = newData[section].map((item: ChecklistItem) =>
-            item.id === itemId ? updatedItem : item
+            item.id === itemId ? {
+              ...item,
+              text: updatedItem.text || updatedItem.description,
+              author: updatedItem.author,
+              dueDate: updatedItem.dueDate,
+              category: updatedItem.category,
+              priority: updatedItem.priority,
+              updatedAt: updatedItem.updatedAt
+            } : item
           );
         });
         return newData;
@@ -334,7 +363,7 @@ export default function MainChecklist({
       }
 
       setChecklistData((prev: Record<string, ChecklistItem[]>) => {
-        const newData = { ...prev };
+        const newData: Record<string, ChecklistItem[]> = { ...prev };
         Object.keys(newData).forEach(section => {
           newData[section] = newData[section].filter((item: ChecklistItem) => item.id !== itemId);
         });
@@ -489,11 +518,44 @@ export default function MainChecklist({
       {/* 테이블 (섹션별 컨텐츠) */}
       <div className="flex-1 overflow-hidden px-4 py-6">
         <div className="w-full h-full overflow-auto">
+          {/* 필터바 추가 */}
+          <div className="px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8 mb-2">
+            <ChecklistFilterBar
+              sectionTitle={sections[currentSectionIndex].title}
+              filterValue={sectionFilters[sections[currentSectionIndex].title] || ''}
+              advFilter={sectionAdvancedFilters[sections[currentSectionIndex].title] || {
+                author: '',
+                startDate: '',
+                endDate: '',
+                category: '',
+                priority: ''
+              }}
+              authors={Array.from(new Set(
+                (checklistData[sections[currentSectionIndex].title] || [])
+                  .map(item => item.author)
+                  .filter((author): author is string => Boolean(author))
+              ))}
+              onFilterChange={(value) => {
+                setSectionFilters(prev => ({
+                  ...prev,
+                  [sections[currentSectionIndex].title]: value
+                }));
+              }}
+              onAdvancedFilterChange={(filter) => {
+                setSectionAdvancedFilters(prev => ({
+                  ...prev,
+                  [sections[currentSectionIndex].title]: filter
+                }));
+              }}
+            />
+          </div>
+          
           <ChecklistTableContainer
             items={checklistData[sections[currentSectionIndex].title] || []}
             sectionTitle={sections[currentSectionIndex].title}
             selectedOptions={selectedOptions}
             sectionFilters={sectionFilters}
+            sectionAdvancedFilters={sectionAdvancedFilters}
             sectionSort={sectionSort}
             onSort={handleSort}
             onItemClick={(item) => handleStartEdit(item.id)}
@@ -548,9 +610,18 @@ export default function MainChecklist({
           imagePreview={imagePreview}
           onClose={handleCancelEdit}
           onEditModeToggle={() => setModalEditMode(!modalEditMode)}
-          onSave={() => {
-            // 저장 로직은 이미 handleEditChecklist에서 처리됨
-            setModalEditMode(false);
+          onSave={async () => {
+            if (modalItem) {
+              await handleEditChecklist(
+                modalItem.id,
+                modalItem.text || modalItem.description || '',
+                modalItem.author,
+                modalItem.dueDate,
+                (modalItem as any).category,
+                (modalItem as any).priority
+              );
+              setModalEditMode(false);
+            }
           }}
           onDelete={() => handleDeleteItem(modalItem.id)}
           onItemChange={(updatedItem) => setModalItem(updatedItem)}

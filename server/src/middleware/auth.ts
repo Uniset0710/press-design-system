@@ -14,18 +14,23 @@ export const authMiddleware = (
   next: NextFunction
 ) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
+  console.log('🔍 authMiddleware - Authorization header:', req.headers.authorization);
+  console.log('🔍 authMiddleware - Token:', token ? `${token.substring(0, 20)}...` : 'No token');
 
   if (!token) {
+    console.log('❌ 토큰이 없음');
     res.status(401).json({ message: '인증이 필요합니다.' });
     return;
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as Omit<User, 'password'>;
+    console.log('🔍 authMiddleware - Decoded token:', decoded);
     req.user = decoded;
     next();
     return;
   } catch (error) {
+    console.error('❌ 토큰 디코딩 실패:', error);
     res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
     return;
   }
@@ -36,10 +41,16 @@ export const adminMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log('🔍 adminMiddleware - req.user:', req.user);
+  console.log('🔍 adminMiddleware - user role:', req.user?.role);
+  
   if (req.user?.role !== 'admin') {
+    console.log('❌ 관리자 권한 없음 - role:', req.user?.role);
     res.status(403).json({ message: '관리자 권한이 필요합니다.' });
     return;
   }
+  
+  console.log('✅ 관리자 권한 확인됨');
   next();
   return;
 };

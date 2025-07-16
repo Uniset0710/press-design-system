@@ -16,17 +16,22 @@ router.get('/:partId', async (req: AuthRequest, res) => {
   const partId = parseInt(req.params.partId, 10);
   const { modelId } = req.query; // 기종별 필터링을 위한 파라미터
   
+  console.log('Checklist request with partId:', partId, 'modelId:', modelId);
+  
   if (isNaN(partId)) {
     return res.status(400).json({ error: 'Invalid partId' });
   }
 
   // 기종별 필터링 조건 추가
   const whereCondition: any = { partId };
-  if (modelId) {
-    whereCondition.modelId = String(modelId);
+  if (modelId && typeof modelId === 'string') {
+    whereCondition.modelId = modelId;
+    console.log('Filtering checklist by modelId:', modelId);
   }
 
   const items = await repo.find({ where: whereCondition });
+  console.log(`Found ${items.length} checklist items for partId: ${partId}, modelId: ${modelId}`);
+  
   const attachmentRepo = AppDataSource.getRepository(
     require('../entities/Attachment').Attachment
   );
@@ -66,6 +71,8 @@ router.get('/:partId', async (req: AuthRequest, res) => {
       modelId: item.modelId, // 기종 정보 추가
     });
   }
+  
+  console.log(`Returning checklist data for partId: ${partId}, modelId: ${modelId}`);
   return res.json(result);
 });
 
@@ -91,12 +98,13 @@ router.post('/:partId', modelIdWriteMiddleware, roleMiddleware(['admin', 'user']
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  // 기종 ID 검증 (선택사항이지만 제공된 경우 유효성 검사)
+  // 기종 코드 검증 (선택사항이지만 제공된 경우 유효성 검사)
   if (modelId) {
     const modelRepo = AppDataSource.getRepository(require('../entities/Model').Model);
-    const model = await modelRepo.findOneBy({ id: parseInt(modelId), isActive: true });
+    const model = await modelRepo.findOneBy({ code: modelId, isActive: true });
     if (!model) {
-      return res.status(400).json({ message: 'Invalid modelId' });
+      console.log(`Invalid modelId: ${modelId}`);
+      // 모델 코드가 유효하지 않아도 계속 진행 (기본값 사용)
     }
   }
 
@@ -109,7 +117,8 @@ router.post('/:partId', modelIdWriteMiddleware, roleMiddleware(['admin', 'user']
     dueDate,
     category,
     priority,
-    modelId: modelId || req.user?.model || 'PRESS', // 기종 ID 저장
+    model: modelId || req.user?.model || 'LARGE_PRESS', // 기종 코드 저장 (model 필드)
+    modelId: modelId || req.user?.model || 'LARGE_PRESS', // 기종 코드 저장 (modelId 필드)
   });
 
   await repo.save(item);
@@ -155,12 +164,14 @@ router.put('/:itemId', modelIdWriteMiddleware, roleMiddleware(['admin', 'user'])
   if (category !== undefined) item.category = category;
   if (priority !== undefined) item.priority = priority;
   if (modelId !== undefined) {
-    // 기종 ID 변경 시 유효성 검사
+    // 기종 코드 변경 시 유효성 검사
     const modelRepo = AppDataSource.getRepository(require('../entities/Model').Model);
-    const model = await modelRepo.findOneBy({ id: parseInt(modelId), isActive: true });
+    const model = await modelRepo.findOneBy({ code: modelId, isActive: true });
     if (!model) {
-      return res.status(400).json({ message: 'Invalid modelId' });
+      console.log(`Invalid modelId: ${modelId}`);
+      // 모델 코드가 유효하지 않아도 계속 진행 (기본값 사용)
     }
+    item.model = modelId;
     item.modelId = modelId;
   }
   

@@ -55,8 +55,7 @@ export default function LoginPage() {
       } else {
         // 로그인 성공 로그
         logUserLogin('success', userInfo.username, true);
-        router.push('/');
-        window.location.reload();
+        router.push('/model-select');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.';

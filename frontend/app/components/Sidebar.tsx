@@ -1,6 +1,8 @@
 'use client';
 import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TreeView, { PressNode, Part } from './TreeView';
+import { getModelFromCookies } from '@/utils/cookieUtils';
 
 function filterTree(treeData: PressNode[], searchTerm: string): PressNode[] {
   if (!searchTerm.trim()) return treeData;
@@ -89,6 +91,10 @@ export default function Sidebar({
   isAdmin,
 }: SidebarProps) {
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  
+  // 모델 정보 가져오기
+  const modelInfo = getModelFromCookies();
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -118,6 +124,29 @@ export default function Sidebar({
       className="bg-white border-r border-gray-200 flex flex-col h-full"
       style={{ width: `${sidebarWidth}px` }}
     >
+      {/* 모델 정보 및 기종 변경 버튼 */}
+      <div className="p-6 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 font-medium text-lg">
+                {modelInfo.code?.charAt(0) || 'M'}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">{modelInfo.name || 'Unknown Model'}</h3>
+              <p className="text-sm text-gray-500">코드: {modelInfo.code || 'N/A'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/model-select')}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors bg-white border border-gray-300 rounded hover:bg-gray-50"
+          >
+            기종 변경
+          </button>
+        </div>
+      </div>
+
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Press Tree</h2>

@@ -13,6 +13,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/api/checklist') ||
     pathname.startsWith('/api/attachments') ||
     pathname === '/login' ||
+    pathname === '/model-select' ||
     pathname.startsWith('/_next') ||
     pathname.includes('.')
   ) {

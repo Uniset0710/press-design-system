@@ -20,6 +20,9 @@ export class Model {
   @Column({ nullable: true })
   description?: string; // 기종 설명
 
+  @Column({ type: 'int', default: 0 })
+  order!: number; // 정렬 순서
+
   @Column({ type: 'boolean', default: true })
   isActive!: boolean; // 활성화 여부
 
@@ -32,5 +35,6 @@ export class Model {
   constructor(partial: Partial<Model> = {}) {
     Object.assign(this, partial);
     this.isActive = partial.isActive ?? true;
+    this.order = partial.order ?? 0;
   }
 } 

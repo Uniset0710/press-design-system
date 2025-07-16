@@ -44,7 +44,7 @@ app.use('/api/tree', authMiddleware, treeRouter);
 app.use('/api/attachments', authMiddleware, attachmentsRouter);
 app.use('/api/checklist', authMiddleware, checklistRouter);
 app.use('/api/comments', authMiddleware, commentsRouter);
-app.use('/api/models', authMiddleware, modelsRouter);
+app.use('/api/models', modelsRouter);
 app.use('/api/options', authMiddleware, optionsRouter);
 
 // 보호된 라우트 예시

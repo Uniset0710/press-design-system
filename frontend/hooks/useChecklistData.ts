@@ -44,6 +44,7 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
 
   useEffect(() => {
     if (!selectedPartId || !session) {
+      console.log('⚠️ 체크리스트 로딩 스킵 - selectedPartId:', selectedPartId, 'session:', !!session);
       setChecklistData({
         'Design Check List': [],
         'Machining Check List': [],
@@ -53,12 +54,15 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
     }
 
     const cacheKey = `${selectedPartId}-${modelId || 'all'}`;
+    console.log('🔍 체크리스트 캐시 키:', cacheKey);
     const hit = getCached(cacheKey);
     if (hit) {
+      console.log('✅ 캐시에서 체크리스트 데이터 로드');
       setChecklistData(hit.data);
       return;
     }
 
+    console.log('🔄 체크리스트 데이터 로딩 시작 - partId:', selectedPartId, 'modelId:', modelId);
     setChecklistData({
       'Design Check List': [],
       'Machining Check List': [],
@@ -70,11 +74,13 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
       ? `/api/checklist/${selectedPartId}?modelId=${modelId}`
       : `/api/checklist/${selectedPartId}`;
       
+    console.log('📡 API 요청 URL:', url);
+    
     checklistApiRequest(url, undefined, {
       headers: { Authorization: `Bearer ${session?.accessToken}` },
     }, session)
       .then((data: any) => {
-        console.log('Raw checklist data:', data); // 디버깅용
+        console.log('✅ 체크리스트 데이터 로드 성공:', data);
         
         // 백엔드에서 받은 데이터를 섹션별로 분류
         const sectionedData: Record<string, ChecklistItem[]> = {
@@ -121,7 +127,7 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
         }));
       })
       .catch(error => {
-        console.error('Error fetching checklist data:', error);
+        console.error('❌ 체크리스트 데이터 로딩 실패:', error);
         setChecklistData({
           'Design Check List': [],
           'Machining Check List': [],

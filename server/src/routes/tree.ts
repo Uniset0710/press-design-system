@@ -12,27 +12,51 @@ router.get('/', authMiddleware, modelIdAccessMiddleware, async (req, res) => {
   try {
     const { modelId } = req.query; // 기종별 필터링을 위한 파라미터
     
-    // 모든 press(루트) 노드 조회
-    const roots = await repo.find({ where: { type: 'press', parentId: IsNull() }, order: { order: 'ASC' } });
+    console.log('Tree API called with modelId:', modelId);
     
-    // 기종별 필터링이 있는 경우, 해당 기종의 트리만 반환
-    let filteredRoots = roots;
-    if (modelId) {
-      // modelId에 해당하는 press 노드만 필터링
-      // 실제로는 press 노드와 modelId를 연결하는 로직이 필요할 수 있음
-      // 현재는 모든 press 노드를 반환하되, 향후 modelId 기반 필터링 로직 추가 가능
-      console.log(`Filtering by modelId: ${modelId}`);
+    // modelId에 따라 press 노드 필터링
+    let whereCondition: any = { type: 'press', parentId: IsNull() };
+    if (modelId && typeof modelId === 'string') {
+      whereCondition.model = modelId;
+      console.log(`Filtering press nodes by modelId: ${modelId}`);
     }
+    
+    const roots = await repo.find({ 
+      where: whereCondition, 
+      order: { order: 'ASC' } 
+    });
+    
+    console.log(`Found ${roots.length} press nodes for modelId: ${modelId}`);
     
     // 각 press 노드에 대해 assemblies/parts 구조로 트리 구성
     const data = await Promise.all(
-      filteredRoots.map(async root => {
-        // assemblies 조회
-        const assemblies = await repo.find({ where: { parentId: root.id, type: 'assembly' }, order: { order: 'ASC' } });
-        // 각 assembly에 대해 parts 조회
+      roots.map(async (root: TreeNode) => {
+        // assemblies 조회 (같은 model 필터 적용)
+        const assemblies = await repo.find({ 
+          where: { 
+            parentId: root.id, 
+            type: 'assembly',
+            model: (modelId && typeof modelId === 'string') ? modelId : root.model
+          }, 
+          order: { order: 'ASC' } 
+        });
+        
+        console.log(`Found ${assemblies.length} assemblies for press node ${root.id} with modelId: ${modelId}`);
+        
+        // 각 assembly에 대해 parts 조회 (같은 model 필터 적용)
         const assemblyNodes = await Promise.all(
-          assemblies.map(async asm => {
-            const parts = await repo.find({ where: { parentId: asm.id, type: 'part' }, order: { order: 'ASC' } });
+          assemblies.map(async (asm: TreeNode) => {
+            const parts = await repo.find({ 
+              where: { 
+                parentId: asm.id, 
+                type: 'part',
+                model: (modelId && typeof modelId === 'string') ? modelId : asm.model
+              }, 
+              order: { order: 'ASC' } 
+            });
+            
+            console.log(`Found ${parts.length} parts for assembly ${asm.id} with modelId: ${modelId}`);
+            
             // parts: id, name만 반환
             return { id: String(asm.id), name: asm.name, parts: parts.map(p => ({ id: String(p.id), name: p.name })) };
           })
@@ -41,6 +65,7 @@ router.get('/', authMiddleware, modelIdAccessMiddleware, async (req, res) => {
         return { id: String(root.id), name: root.name, assemblies: assemblyNodes };
       })
     );
+    
     res.json(data);
   } catch (error) {
     console.error('Error fetching tree data:', error);
@@ -52,13 +77,22 @@ router.get('/', authMiddleware, modelIdAccessMiddleware, async (req, res) => {
 router.post('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
     const { nodeId, assemblyId, name, modelId } = req.body; // modelId 추가
+    console.log('Tree POST 요청:', { nodeId, assemblyId, name, modelId });
+    
     if (assemblyId) {
       // add part
       const asm = await repo.findOneBy({ id: assemblyId, type: 'assembly' });
       if (!asm) return res.status(404).json({ error: 'Assembly not found' });
       const maxOrderPart = await repo.findOne({ where: { parentId: assemblyId, type: 'part' }, order: { order: 'DESC' } });
       const newOrder = (maxOrderPart?.order || 0) + 1;
-      const part = repo.create({ name, type: 'part', parentId: assemblyId, order: newOrder });
+      const part = repo.create({ 
+        name, 
+        type: 'part', 
+        parentId: assemblyId, 
+        order: newOrder,
+        model: modelId || asm.model // model 필드 설정
+      });
+      console.log('파트 생성:', { name, model: part.model, assemblyId });
       await repo.save(part);
       return res.json({ success: true, part });
     }
@@ -68,7 +102,14 @@ router.post('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
       if (!press) return res.status(404).json({ error: 'Press node not found' });
       const maxOrderAssembly = await repo.findOne({ where: { parentId: nodeId, type: 'assembly' }, order: { order: 'DESC' } });
       const newOrder = (maxOrderAssembly?.order || 0) + 1;
-      const asm = repo.create({ name, type: 'assembly', parentId: nodeId, order: newOrder });
+      const asm = repo.create({ 
+        name, 
+        type: 'assembly', 
+        parentId: nodeId, 
+        order: newOrder,
+        model: modelId || press.model // model 필드 설정
+      });
+      console.log('어셈블리 생성:', { name, model: asm.model, nodeId });
       await repo.save(asm);
       return res.json({ success: true, assembly: asm });
     }
@@ -108,10 +149,31 @@ router.put('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
 router.delete('/', authMiddleware, modelIdWriteMiddleware, async (req, res) => {
   try {
     const { type, id, modelId } = req.body; // modelId 추가
+    console.log('Tree DELETE 요청:', { type, id, modelId });
+    
     if (type === 'assembly' || type === 'part') {
       const node = await repo.findOneBy({ id, type });
-      if (!node) return res.status(404).json({ error: 'Node not found' });
+      console.log('삭제할 노드 찾기:', { id, type, found: !!node });
+      
+      if (!node) {
+        console.log('노드를 찾을 수 없음:', { id, type });
+        return res.status(404).json({ error: 'Node not found' });
+      }
+      
+      console.log('노드 삭제 시작:', { id: node.id, name: node.name, type: node.type });
+      
+      // 연관된 하위 항목들도 함께 삭제
+      if (type === 'assembly') {
+        // 어셈블리 삭제 시 하위 파트들도 삭제
+        const childParts = await repo.find({ where: { parentId: id, type: 'part' } });
+        console.log('하위 파트들 삭제:', childParts.length, '개');
+        for (const part of childParts) {
+          await repo.remove(part);
+        }
+      }
+      
       await repo.remove(node);
+      console.log('노드 삭제 완료:', { id: node.id, name: node.name });
       return res.json({ success: true });
     }
     return res.status(400).json({ error: 'Invalid type' });

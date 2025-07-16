@@ -9,6 +9,7 @@ import Sidebar from './Sidebar';
 import MainChecklist from './MainChecklist';
 import { useChecklistData } from '../../hooks/useChecklistData';
 import { Model as ModelType } from '@/types/model';
+import { getModelFromCookies } from '@/utils/cookieUtils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002';
 
@@ -27,10 +28,11 @@ export default function PageContainer() {
   const [selectedPartId, setSelectedPartId] = useState<string>('');
   const [models, setModels] = useState<ModelType[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>('');
+  const [selectedModelCode, setSelectedModelCode] = useState<string>('');
   const { checklistData, setChecklistData, mutateChecklist } = useChecklistData(
     selectedPartId,
     session,
-    selectedModelId // modelId 전달
+    selectedModelCode // modelCode 전달
   );
   const [attachmentsCache, setAttachmentsCache] = useState<
     Record<string, AttachmentData[]>
@@ -51,9 +53,9 @@ export default function PageContainer() {
 
   const fetchTreeData = async (): Promise<PressNode[]> => {
     try {
-      // modelId가 있으면 쿼리 파라미터로 추가
-      const url = selectedModelId 
-        ? `${API_BASE}/api/tree?modelId=${selectedModelId}`
+      // modelCode가 있으면 쿼리 파라미터로 추가
+      const url = selectedModelCode 
+        ? `${API_BASE}/api/tree?modelId=${selectedModelCode}`
         : `${API_BASE}/api/tree`;
         
       const response = await fetch(url, {
@@ -90,7 +92,11 @@ export default function PageContainer() {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({ nodeId: pressNodeId, name: newAssemblyName }),
+        body: JSON.stringify({ 
+          nodeId: pressNodeId, 
+          name: newAssemblyName,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
       });
 
       if (!response.ok) {
@@ -120,6 +126,7 @@ export default function PageContainer() {
         body: JSON.stringify({
           assemblyId: selectedAssemblyId,
           name: newPartName,
+          modelId: selectedModelCode // 모델 코드로 변경
         }),
       });
 
@@ -151,7 +158,11 @@ export default function PageContainer() {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({ partId, name: newName }),
+        body: JSON.stringify({ 
+          partId, 
+          name: newName,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
       });
 
       if (!response.ok) {
@@ -175,7 +186,11 @@ export default function PageContainer() {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({ assemblyId, name: newName }),
+        body: JSON.stringify({ 
+          assemblyId, 
+          name: newName,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
       });
 
       if (!response.ok) {
@@ -191,6 +206,33 @@ export default function PageContainer() {
     }
   };
 
+  const handleDeletePart = async (partId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/tree`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+        },
+        body: JSON.stringify({ 
+          partId,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete part');
+      }
+
+      const newTreeData = await fetchTreeData();
+      setTreeData(newTreeData);
+      toast.success('Part deleted successfully');
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      toast.error('Failed to delete part');
+    }
+  };
+
   const handleDelete = async (type: 'part' | 'assembly', id: string) => {
     try {
       const response = await fetch(`${API_BASE}/api/tree`, {
@@ -199,7 +241,11 @@ export default function PageContainer() {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({ type, id }),
+        body: JSON.stringify({ 
+          type,
+          id,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
       });
 
       if (!response.ok) {
@@ -226,7 +272,11 @@ export default function PageContainer() {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({ type, ...payload }),
+        body: JSON.stringify({ 
+          type, 
+          ...payload,
+          modelId: selectedModelCode // 모델 코드로 변경
+        }),
       });
 
       if (!response.ok) {
@@ -308,16 +358,34 @@ export default function PageContainer() {
     }
   };
 
+  // 선택한 기종 정보를 쿠키에서 읽어오기
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    const modelInfo = getModelFromCookies();
+    console.log('🔍 쿠키에서 읽어온 모델 정보:', modelInfo);
+    if (modelInfo.id) {
+      setSelectedModelId(modelInfo.id);
+      setSelectedModelCode(modelInfo.code || '');
+      console.log('✅ 선택된 기종 ID:', modelInfo.id);
+      console.log('✅ 선택된 기종 코드:', modelInfo.code);
+      console.log('✅ 선택된 기종 이름:', modelInfo.name);
+    } else {
+      console.log('⚠️ 쿠키에서 모델 ID를 찾을 수 없습니다');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status !== 'authenticated' || !selectedModelCode) return;
     const loadData = async () => {
       try {
         setIsLoading(true);
         setError(null);
+        console.log('🔄 트리 데이터 로딩 시작 - 선택된 모델 코드:', selectedModelCode);
         const data = await fetchTreeData();
+        console.log('📊 로드된 트리 데이터:', data);
+        console.log('📊 트리 데이터 상세:', JSON.stringify(data, null, 2));
         setTreeData(data);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('❌ 트리 데이터 로딩 실패:', error);
         setError('Failed to load data');
       } finally {
         setIsLoading(false);
@@ -325,7 +393,7 @@ export default function PageContainer() {
     };
 
     loadData();
-  }, [status, session, selectedModelId]); // selectedModelId 의존성 추가
+  }, [status, session, selectedModelCode]);
 
   useEffect(() => {
     // 모델 목록 불러오기
@@ -381,25 +449,18 @@ export default function PageContainer() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar
         treeData={treeData}
         selectedPart={selectedPart}
         selectedPartId={selectedPartId}
-        assemblyExpanded={assemblyExpanded}
-        sidebarWidth={sidebarWidth}
-        searchTerm={searchTerm}
-        isEditMode={isEditMode}
-        newPartName={newPartName}
-        selectedAssemblyId={selectedAssemblyId}
-        newAssemblyName={newAssemblyName}
         onSelectPart={handlePartSelect}
+        onAddAssembly={handleAddAssembly}
         onAddPart={handleAddPart}
         onEditPart={handleEditPart}
         onEditAssembly={handleEditAssembly}
         onDelete={handleDelete}
         onReorder={handleReorder}
-        onAddAssembly={handleAddAssembly}
         onToggleNode={handleToggleNode}
         onToggleAssembly={handleToggleAssembly}
         onSetAssemblyExpanded={setAssemblyExpanded}
@@ -409,38 +470,27 @@ export default function PageContainer() {
         onSetSearchTerm={setSearchTerm}
         onSetIsEditMode={setIsEditMode}
         onSetSidebarWidth={setSidebarWidth}
+        newPartName={newPartName}
+        selectedAssemblyId={selectedAssemblyId}
+        newAssemblyName={newAssemblyName}
+        sidebarWidth={sidebarWidth}
+        searchTerm={searchTerm}
+        isEditMode={isEditMode}
+        assemblyExpanded={assemblyExpanded}
         isAdmin={isAdmin}
       />
-      <div className="flex-1 flex flex-col">
-        {/* 모델 선택 드롭다운 */}
-        <div className="p-4 border-b bg-gray-50 flex items-center space-x-4">
-          <label htmlFor="model-select" className="font-semibold text-gray-700">기종 선택:</label>
-          <select
-            id="model-select"
-            value={selectedModelId}
-            onChange={e => setSelectedModelId(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {(Array.isArray(models) ? models : []).map(model => (
-              <option key={model.id} value={model.id}>
-                {model.name} ({model.code})
-              </option>
-            ))}
-          </select>
-        </div>
-        <MainChecklist
-          selectedPart={selectedPart}
-          selectedPartId={selectedPartId}
-          checklistData={checklistData}
-          setChecklistData={setChecklistData}
-          mutateChecklist={mutateChecklist}
-          attachmentsCache={attachmentsCache}
-          setAttachmentsCache={setAttachmentsCache}
-          onFileUpload={handleFileUpload}
-          onDeleteAttachment={handleDeleteAttachment}
-          isAdmin={isAdmin}
-        />
-      </div>
+      <MainChecklist
+        selectedPart={selectedPart}
+        selectedPartId={selectedPartId}
+        checklistData={checklistData}
+        setChecklistData={setChecklistData}
+        mutateChecklist={mutateChecklist}
+        attachmentsCache={attachmentsCache}
+        setAttachmentsCache={setAttachmentsCache}
+        onFileUpload={handleFileUpload}
+        onDeleteAttachment={handleDeleteAttachment}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 } 

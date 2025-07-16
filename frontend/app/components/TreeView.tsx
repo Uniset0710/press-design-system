@@ -69,8 +69,10 @@ export default function TreeView({
   );
 
   console.log('트리 데이터(data):', data);
-  data.forEach(node => {
-    console.log('node.id:', node.id, 'node.name:', node.name);
+  console.log('트리 데이터 길이:', data.length);
+  data.forEach((node, index) => {
+    console.log(`node[${index}].id:`, node.id, 'node.name:', node.name);
+    console.log(`node[${index}].assemblies:`, node.assemblies);
   });
 
   // collapse state for root nodes (assemblies list)
