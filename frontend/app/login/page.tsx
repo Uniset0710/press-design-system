@@ -125,6 +125,16 @@ export default function LoginPage() {
         
         <div className='mt-6 text-center text-sm text-gray-600'>
           <p>보안을 위해 로그인 시도가 기록됩니다.</p>
+          <div className='mt-4'>
+            <button
+              type='button'
+              onClick={() => router.push('/password/forgot')}
+              className='text-blue-600 hover:text-blue-800 underline'
+              aria-label="비밀번호 찾기"
+            >
+              비밀번호를 잊으셨나요?
+            </button>
+          </div>
         </div>
       </div>
     </div>

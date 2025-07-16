@@ -12,11 +12,26 @@ components/
 │   ├── ChecklistFilterBar.tsx
 │   ├── ChecklistInputForm.tsx
 │   ├── ChecklistTableContainer.tsx
+│   ├── EditForm.tsx
+│   ├── ItemToolbar.tsx
+│   ├── TextWithAttachments.tsx
 │   └── __tests__/      # 테스트 파일들
 ├── tree/               # 트리 뷰 관련 컴포넌트
 │   └── TreeView.tsx
 ├── modal/              # 모달 관련 컴포넌트
+│   └── ChecklistItemModal.tsx
 ├── common/             # 공통 컴포넌트
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   ├── Textarea.tsx
+│   ├── Select.tsx
+│   ├── Modal.tsx
+│   ├── Alert.tsx
+│   ├── Loading.tsx
+│   ├── Tooltip.tsx
+│   └── __tests__/      # 테스트 파일들
+├── ChecklistAttachments.tsx
+├── ChecklistContent.tsx
 └── README.md           # 이 파일
 ```
 
@@ -159,6 +174,59 @@ const MyFilter = () => {
 };
 ```
 
+### ChecklistItemModal
+
+체크리스트 항목의 상세 정보를 모달로 표시하고 편집하는 컴포넌트입니다.
+
+#### Props
+
+```typescript
+interface ChecklistItemModalProps {
+  modalItem: ChecklistItem | null;
+  modalEditMode: boolean;
+  imagePreview: string | null;
+  onClose: () => void;
+  onEditModeToggle: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onItemChange: (item: ChecklistItem) => void;
+  onFileUpload: (file: File) => void;
+  onDeleteAttachment: (attachmentId: string) => void;
+  onImagePreview: (url: string) => void;
+  onImagePreviewClose: () => void;
+  isAdmin?: boolean;
+}
+```
+
+#### 사용 예시
+
+```tsx
+import ChecklistItemModal from '@/components/modal/ChecklistItemModal';
+
+const MyModal = () => {
+  const [modalItem, setModalItem] = useState<ChecklistItem | null>(null);
+  const [modalEditMode, setModalEditMode] = useState(false);
+
+  return (
+    <ChecklistItemModal
+      modalItem={modalItem}
+      modalEditMode={modalEditMode}
+      imagePreview={null}
+      onClose={() => setModalItem(null)}
+      onEditModeToggle={() => setModalEditMode(!modalEditMode)}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      onItemChange={setModalItem}
+      onFileUpload={handleFileUpload}
+      onDeleteAttachment={handleDeleteAttachment}
+      onImagePreview={setImagePreview}
+      onImagePreviewClose={() => setImagePreview(null)}
+      isAdmin={isAdmin}
+    />
+  );
+};
+```
+
 ### TreeView
 
 트리 구조의 데이터를 표시하는 컴포넌트입니다.
@@ -167,105 +235,149 @@ const MyFilter = () => {
 
 ```typescript
 interface TreeViewProps {
-  data: TreeNode[];
-  openNodes: Set<string>;
-  openAssemblies: Set<string>;
-  onNodeToggle: (nodeId: string) => void;
-  onAssemblyToggle: (assemblyId: string) => void;
-  onNodeClick: (node: TreeNode) => void;
-  searchTerm?: string;
+  data: PressNode[];
+  selectedPart: Part | null;
+  onSelectPart: (part: Part) => void;
+  onAddAssembly?: (parentId: string, name: string) => void;
+  onAddPart?: (assemblyId: string, name: string) => void;
+  onEditPart?: (partId: string, name: string) => void;
+  onEditAssembly?: (assemblyId: string, name: string) => void;
+  onDelete?: (id: string) => void;
+  onReorder?: (dragId: string, dropId: string) => void;
+  onToggleNode?: (id: string) => void;
+  onToggleAssembly?: (id: string) => void;
+  onSetAssemblyExpanded?: (expanded: Record<string, boolean>) => void;
+  onSetNewPartName?: (name: string) => void;
+  onSetSelectedAssemblyId?: (id: string) => void;
+  onSetNewAssemblyName?: (name: string) => void;
+  onSetSearchTerm?: (term: string) => void;
+  onSetIsEditMode?: (mode: boolean) => void;
+  onSetSidebarWidth?: (width: number) => void;
+  newPartName: string;
+  selectedAssemblyId: string;
+  newAssemblyName: string;
+  sidebarWidth: number;
+  searchTerm: string;
+  isEditMode: boolean;
+  assemblyExpanded: Record<string, boolean>;
+  isAdmin?: boolean;
 }
 ```
 
-#### 사용 예시
+### Common Components
 
-```tsx
-import TreeView from '@/components/tree/TreeView';
+#### Button
 
-const MyTreeView = () => {
-  const [openNodes, setOpenNodes] = useState(new Set());
-  const [openAssemblies, setOpenAssemblies] = useState(new Set());
-
-  const handleNodeToggle = (nodeId: string) => {
-    const newOpenNodes = new Set(openNodes);
-    if (newOpenNodes.has(nodeId)) {
-      newOpenNodes.delete(nodeId);
-    } else {
-      newOpenNodes.add(nodeId);
-    }
-    setOpenNodes(newOpenNodes);
-  };
-
-  return (
-    <TreeView
-      data={treeData}
-      openNodes={openNodes}
-      openAssemblies={openAssemblies}
-      onNodeToggle={handleNodeToggle}
-      onAssemblyToggle={handleAssemblyToggle}
-      onNodeClick={handleNodeClick}
-    />
-  );
-};
+```typescript
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+  'aria-label'?: string;
+}
 ```
 
-## 🧪 Testing
+#### Input
 
-모든 주요 컴포넌트는 단위 테스트가 작성되어 있습니다.
-
-### 테스트 실행
-
-```bash
-# 전체 테스트 실행
-npm test
-
-# Checklist 관련 테스트만 실행
-npm test -- --testPathPatterns="checklist"
-
-# TreeView 테스트만 실행
-npm test -- --testPathPatterns="TreeView"
+```typescript
+interface InputProps {
+  type?: 'text' | 'email' | 'password' | 'number' | 'date';
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+}
 ```
 
-### 테스트 커버리지
+#### Textarea
 
-- ✅ ChecklistTable: 렌더링, 정렬, 클릭 이벤트
-- ✅ ChecklistRow: 데이터 표시, 클릭 이벤트, 첨부파일 표시
-- ✅ ChecklistFilterBar: 필터 입력, 드롭다운 선택, 이벤트 핸들링
-- ✅ TreeView: 노드 토글, 검색, 클릭 이벤트
+```typescript
+interface TextareaProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  rows?: number;
+  disabled?: boolean;
+  required?: boolean;
+  autoFocus?: boolean;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+}
+```
 
-## 🎨 Styling
+#### Select
 
-모든 컴포넌트는 Tailwind CSS를 사용하여 스타일링되어 있습니다.
+```typescript
+interface SelectProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+}
+```
 
-### 주요 스타일 클래스
+#### Modal
 
-- **테이블**: `w-full text-sm border-collapse`
-- **행**: `bg-white cursor-pointer hover:bg-blue-50`
-- **헤더**: `bg-blue-100`
-- **필터**: `p-1 border rounded`
+```typescript
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+}
+```
 
-## 🔧 Development
+## 🎯 주요 변경사항
 
-### 컴포넌트 추가 시 체크리스트
+### ✅ 완료된 작업
+- 중복 컴포넌트 제거 (`ChecklistItem.tsx`, `ChecklistItemComponent.tsx`)
+- 실제 사용 중인 컴포넌트들만 유지
+- 모든 테스트 통과 (233개 테스트)
+- 접근성 속성 추가
+- 반응형 디자인 적용
 
-1. **타입 정의**: TypeScript 인터페이스 작성
-2. **Props 검증**: 필수/선택 props 명확히 구분
-3. **테스트 작성**: 렌더링, 이벤트, 엣지 케이스 테스트
-4. **문서화**: 사용법과 예시 코드 작성
-5. **스타일링**: Tailwind CSS 클래스 적용
+### 📋 현재 사용 중인 컴포넌트
+- **체크리스트 편집**: `ChecklistItemModal` (모달 형태)
+- **테이블 표시**: `ChecklistTable`, `ChecklistRow`
+- **필터링**: `ChecklistFilterBar`
+- **입력 폼**: `ChecklistInputForm`
+- **공통 컴포넌트**: `Button`, `Input`, `Textarea`, `Select`, `Modal`, `Alert`, `Loading`, `Tooltip`
 
-### 코드 품질 기준
+## 🚀 사용 가이드
 
-- ✅ TypeScript 사용
-- ✅ 단위 테스트 작성
-- ✅ Props 인터페이스 정의
-- ✅ 에러 핸들링
-- ✅ 접근성 고려
-- ✅ 반응형 디자인
+### 체크리스트 편집 기능
+현재 체크리스트 편집은 `ChecklistItemModal`을 통해 모달 형태로 제공됩니다:
 
-## 📝 Notes
+1. **테이블에서 항목 클릭** → 모달 열림
+2. **"수정" 버튼 클릭** → 편집 모드 활성화
+3. **내용 편집** → 폼 필드들 편집
+4. **"저장" 버튼 클릭** → 변경사항 저장
 
-- 모든 컴포넌트는 Context API를 통해 상태를 관리합니다
-- 첨부파일 기능은 별도 컴포넌트로 분리되어 있습니다
-- 필터링과 정렬은 커스텀 훅으로 관리됩니다
-- 트리 뷰의 확장/축소 상태는 상위 컴포넌트에서 관리됩니다 
+### 접근성
+모든 컴포넌트는 WCAG 2.1 AA 기준을 준수하며 다음 기능을 제공합니다:
+- 키보드 내비게이션 지원
+- ARIA 속성 추가
+- 스크린 리더 지원
+- 포커스 관리
+
+### 반응형 디자인
+모든 컴포넌트는 모바일/태블릿/데스크탑에서 사용 가능하도록 설계되었습니다.
+
+---
+
+**마지막 업데이트**: 2024년 12월
+**버전**: 2.0.0
+**상태**: 중복 컴포넌트 제거 완료 ✅ 

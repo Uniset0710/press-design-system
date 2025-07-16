@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
+import { logChecklistAction } from '@/utils/audit';
 
 const BACKEND = 'http://localhost:3002';
 
@@ -50,7 +51,23 @@ export async function GET(request: NextRequest, { params }: { params: { partId: 
     }
     
     const url = `${BACKEND}/api/checklist/${params.partId}?modelId=${modelId}`;
-    return proxy(request, 'GET', url);
+    const result = await proxy(request, 'GET', url);
+    
+    // 감사 로그 기록
+    if (session?.user) {
+      const user = session.user as any;
+      logChecklistAction(
+        'checklist.view',
+        params.partId,
+        user.id || 'unknown',
+        user.name || 'unknown',
+        { modelId },
+        result.status < 400,
+        result.status >= 400 ? 'Failed to fetch checklist' : undefined
+      );
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error fetching checklist item:', error);
     return NextResponse.json(
@@ -80,14 +97,32 @@ export async function POST(request: NextRequest, { params }: { params: { partId:
       body: JSON.stringify(body),
       credentials: 'include',
     });
+    
     const contentType = backendRes.headers.get('content-type') || '';
+    let result;
     if (contentType.includes('application/json')) {
       const data = await backendRes.json();
-      return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
+      result = NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
     } else {
       const blob = await backendRes.blob();
-      return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+      result = new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
     }
+    
+    // 감사 로그 기록
+    if (session?.user) {
+      const user = session.user as any;
+      logChecklistAction(
+        'checklist.create',
+        params.partId,
+        user.id || 'unknown',
+        user.name || 'unknown',
+        { modelId: body.modelId, text: body.text },
+        backendRes.ok,
+        !backendRes.ok ? 'Failed to create checklist item' : undefined
+      );
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error creating checklist item:', error);
     return NextResponse.json(
@@ -117,14 +152,32 @@ export async function PUT(request: NextRequest, { params }: { params: { partId: 
       body: JSON.stringify(body),
       credentials: 'include',
     });
+    
     const contentType = backendRes.headers.get('content-type') || '';
+    let result;
     if (contentType.includes('application/json')) {
       const data = await backendRes.json();
-      return NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
+      result = NextResponse.json(data, { status: backendRes.status, headers: backendRes.headers });
     } else {
       const blob = await backendRes.blob();
-      return new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
+      result = new NextResponse(blob, { status: backendRes.status, headers: backendRes.headers });
     }
+    
+    // 감사 로그 기록
+    if (session?.user) {
+      const user = session.user as any;
+      logChecklistAction(
+        'checklist.update',
+        params.partId,
+        user.id || 'unknown',
+        user.name || 'unknown',
+        { modelId: body.modelId, itemId: body.id },
+        backendRes.ok,
+        !backendRes.ok ? 'Failed to update checklist item' : undefined
+      );
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error updating checklist item:', error);
     return NextResponse.json(
@@ -148,7 +201,23 @@ export async function DELETE(request: NextRequest, { params }: { params: { partI
     }
     
     const url = `${BACKEND}/api/checklist/${params.partId}?modelId=${modelId}`;
-    return proxy(request, 'DELETE', url);
+    const result = await proxy(request, 'DELETE', url);
+    
+    // 감사 로그 기록
+    if (session?.user) {
+      const user = session.user as any;
+      logChecklistAction(
+        'checklist.delete',
+        params.partId,
+        user.id || 'unknown',
+        user.name || 'unknown',
+        { modelId },
+        result.status < 400,
+        result.status >= 400 ? 'Failed to delete checklist item' : undefined
+      );
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error deleting checklist item:', error);
     return NextResponse.json(
