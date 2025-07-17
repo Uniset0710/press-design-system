@@ -11,7 +11,7 @@ import { PasswordResetToken } from './entities/PasswordResetToken';
 
 export const AppDataSource = new DataSource({
   type: 'sqlite',
-  database: 'database.sqlite',
+  database: './database.sqlite',
   synchronize: true,
   logging: true,
   entities: [User, TreeNode, ChecklistItem, Attachment, Comment, History, Model, Option, PasswordResetToken],

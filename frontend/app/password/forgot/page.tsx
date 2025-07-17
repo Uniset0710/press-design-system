@@ -4,27 +4,17 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 export default function PasswordForgotPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [error, setError] = useState('');
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim()) {
-      setError('이메일 주소를 입력해주세요');
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError('유효한 이메일 주소를 입력해주세요');
+    if (!username.trim()) {
+      setError('사용자명을 입력해주세요');
       return;
     }
 
@@ -36,7 +26,7 @@ export default function PasswordForgotPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: username.trim() }),
       });
 
       const data = await response.json();
@@ -71,7 +61,7 @@ export default function PasswordForgotPage() {
               이메일 발송 완료
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              {email}로 비밀번호 재설정 링크를 발송했습니다
+              {username}님의 등록된 이메일로 비밀번호 재설정 링크를 발송했습니다
             </p>
             <p className="mt-4 text-center text-sm text-gray-500">
               이메일을 확인하여 비밀번호를 재설정해주세요
@@ -85,7 +75,7 @@ export default function PasswordForgotPage() {
               <button
                 onClick={() => {
                   setIsEmailSent(false);
-                  setEmail('');
+                  setUsername('');
                 }}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
@@ -105,7 +95,7 @@ export default function PasswordForgotPage() {
           비밀번호 찾기
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          가입한 이메일 주소를 입력하세요
+          가입한 사용자명을 입력하세요
         </p>
       </div>
 
@@ -113,22 +103,22 @@ export default function PasswordForgotPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일 주소
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                사용자명
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className={`appearance-none block w-full px-3 py-2 border ${
                     error ? 'border-red-300' : 'border-gray-300'
                   } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="example@company.com"
+                  placeholder="사용자명을 입력하세요"
                 />
                 {error && (
                   <p className="mt-2 text-sm text-red-600">{error}</p>

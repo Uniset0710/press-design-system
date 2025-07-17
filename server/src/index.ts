@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { AppDataSource } from './database';
 import authRouter from './routes/auth';
 import treeRouter from './routes/tree';
@@ -12,10 +13,17 @@ import modelsRouter from './routes/models';
 import optionsRouter from './routes/options';
 import { authMiddleware } from './middleware/auth';
 
-dotenv.config();
+// 환경변수 로드
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const port = process.env.PORT || 3002;
+
+// 환경변수 확인 로그
+console.log('Environment variables:');
+console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? 'Set' : 'Not set');
+console.log('FROM_EMAIL:', process.env.FROM_EMAIL);
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
 
 // CORS 설정
 app.use(

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logSecurityEvent } from '@/utils/audit';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3002';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
-
+    
     if (!token) {
       return NextResponse.json(
         { error: '토큰이 필요합니다' },
@@ -13,58 +14,51 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 데이터베이스에서 토큰 조회
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-
-    const resetToken = await prisma.passwordResetToken.findFirst({
-      where: { 
-        token,
-        expiresAt: { gt: new Date() } // 만료되지 않은 토큰만
+    const response = await fetch(`${API_BASE}/api/auth/validate-reset-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      include: {
-        user: {
-          select: { id: true, username: true, email: true }
-        }
-      }
+      body: JSON.stringify({ token }),
     });
 
-    await prisma.$disconnect();
-
-    if (!resetToken) {
-      // 보안 이벤트 로그
-      logSecurityEvent('password_reset_token_validation_failed', {
-        token: token.substring(0, 8) + '...', // 토큰 일부만 로그
-        reason: 'invalid_or_expired_token'
-      }, 'medium');
-
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다' },
-        { status: 400 }
-      );
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
     }
 
-    // 성공 로그
-    logSecurityEvent('password_reset_token_validation_success', {
-      userId: resetToken.user.id
-    }, 'low');
-
-    return NextResponse.json(
-      { 
-        message: '유효한 토큰입니다',
-        userId: resetToken.user.id
-      },
-      { status: 200 }
-    );
-
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Token validation error:', error);
-    
-    // 보안 이벤트 로그
-    logSecurityEvent('password_reset_token_validation_error', {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 'high');
+    return NextResponse.json(
+      { error: '토큰 검증 중 오류가 발생했습니다' },
+      { status: 500 }
+    );
+  }
+}
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    const response = await fetch(`${API_BASE}/api/auth/validate-reset-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Token validation error:', error);
     return NextResponse.json(
       { error: '토큰 검증 중 오류가 발생했습니다' },
       { status: 500 }

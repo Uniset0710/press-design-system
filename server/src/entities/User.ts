@@ -8,6 +8,9 @@ export class User {
   @Column({ unique: true })
   username!: string;
 
+  @Column({ nullable: true })
+  email?: string; // 이메일 필드 추가
+
   @Column()
   password!: string;
 
