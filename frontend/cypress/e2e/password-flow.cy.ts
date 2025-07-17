@@ -1,263 +1,219 @@
-describe('비밀번호 관리 플로우', () => {
+describe('Password Flow', () => {
   beforeEach(() => {
-    cy.visit('/login')
-  })
+    // Reset database state before each test
+    cy.request('POST', 'http://localhost:3002/api/test/reset');
+  });
 
-  describe('비밀번호 변경', () => {
-    it('로그인 후 비밀번호 변경이 가능해야 한다', () => {
-      // 로그인
-      cy.intercept('POST', '/api/auth/callback/credentials', {
+  describe('Password Forgot Flow', () => {
+    it('should complete password forgot flow successfully', () => {
+      // Visit forgot password page
+      cy.visit('/password/forgot');
+
+      // Check page elements
+      cy.get('h2').should('contain', '비밀번호 찾기');
+      cy.get('label').should('contain', '사용자명');
+      cy.get('button').should('contain', '비밀번호 재설정 이메일 발송');
+
+      // Submit empty form
+      cy.get('button[type="submit"]').click();
+      cy.contains('사용자명을 입력해주세요').should('be.visible');
+
+      // Enter valid username
+      cy.get('input[name="username"]').type('admin');
+      cy.get('button[type="submit"]').click();
+
+      // Check success message
+      cy.contains('이메일 발송 완료').should('be.visible');
+      cy.contains('admin님의 등록된 이메일로 비밀번호 재설정 링크를 발송했습니다').should('be.visible');
+    });
+
+    it('should handle invalid username', () => {
+      cy.visit('/password/forgot');
+
+      // Enter invalid username
+      cy.get('input[name="username"]').type('nonexistent');
+      cy.get('button[type="submit"]').click();
+
+      // Should still show success (security measure)
+      cy.contains('이메일 발송 완료').should('be.visible');
+    });
+
+    it('should handle network error', () => {
+      // Mock network error
+      cy.intercept('POST', '/api/auth/forgot-password', { forceNetworkError: true });
+
+      cy.visit('/password/forgot');
+      cy.get('input[name="username"]').type('admin');
+      cy.get('button[type="submit"]').click();
+
+      cy.contains('서버 오류가 발생했습니다').should('be.visible');
+    });
+  });
+
+  describe('Password Change Flow', () => {
+    beforeEach(() => {
+      // Login as admin
+      cy.visit('/login');
+      cy.get('input[name="username"]').type('admin');
+      cy.get('input[name="password"]').type('admin123');
+      cy.get('button[type="submit"]').click();
+      cy.url().should('include', '/model-select');
+    });
+
+    it('should change password successfully', () => {
+      cy.visit('/password/change');
+
+      // Check page elements
+      cy.get('h2').should('contain', '비밀번호 변경');
+      cy.get('label').should('contain', '현재 비밀번호');
+      cy.get('label').should('contain', '새 비밀번호');
+      cy.get('label').should('contain', '새 비밀번호 확인');
+
+      // Submit empty form
+      cy.get('button[type="submit"]').click();
+      cy.contains('현재 비밀번호를 입력해주세요').should('be.visible');
+      cy.contains('새 비밀번호를 입력해주세요').should('be.visible');
+      cy.contains('새 비밀번호 확인을 입력해주세요').should('be.visible');
+
+      // Enter weak password
+      cy.get('input[name="newPassword"]').type('weak');
+      cy.get('button[type="submit"]').click();
+      cy.contains('비밀번호는 최소 8자 이상이어야 합니다').should('be.visible');
+
+      // Enter mismatched passwords
+      cy.get('input[name="newPassword"]').clear().type('StrongPass123!');
+      cy.get('input[name="confirmPassword"]').type('DifferentPass123!');
+      cy.get('button[type="submit"]').click();
+      cy.contains('비밀번호가 일치하지 않습니다').should('be.visible');
+
+      // Enter valid passwords
+      cy.get('input[name="currentPassword"]').type('admin123');
+      cy.get('input[name="newPassword"]').clear().type('NewStrongPass123!');
+      cy.get('input[name="confirmPassword"]').clear().type('NewStrongPass123!');
+      cy.get('button[type="submit"]').click();
+
+      // Check success message
+      cy.contains('비밀번호가 성공적으로 변경되었습니다').should('be.visible');
+    });
+
+    it('should handle wrong current password', () => {
+      cy.visit('/password/change');
+
+      cy.get('input[name="currentPassword"]').type('WrongPass123!');
+      cy.get('input[name="newPassword"]').type('NewStrongPass123!');
+      cy.get('input[name="confirmPassword"]').type('NewStrongPass123!');
+      cy.get('button[type="submit"]').click();
+
+      cy.contains('현재 비밀번호가 올바르지 않습니다').should('be.visible');
+    });
+
+    it('should redirect unauthenticated users', () => {
+      // Logout
+      cy.visit('/api/auth/signout');
+      cy.visit('/password/change');
+
+      // Should redirect to login
+      cy.url().should('include', '/login');
+    });
+  });
+
+  describe('Password Reset Flow', () => {
+    it('should handle invalid reset token', () => {
+      cy.visit('/password/reset?token=invalid-token');
+
+      cy.contains('유효하지 않은 링크').should('be.visible');
+      cy.contains('비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다').should('be.visible');
+    });
+
+    it('should complete password reset flow with valid token', () => {
+      // Mock valid token
+      cy.intercept('GET', '/api/auth/validate-reset-token*', {
         statusCode: 200,
-        body: {
-          user: {
-            id: '1',
-            email: 'admin@example.com',
-            role: 'admin',
-            model: 'PRESS'
-          }
-        }
-      }).as('loginRequest')
+        body: { valid: true, userId: '1' }
+      });
 
-      cy.get('[data-testid="email-input"]').type('admin@example.com')
-      cy.get('[data-testid="password-input"]').type('password')
-      cy.get('[data-testid="login-button"]').click()
-
-      cy.wait('@loginRequest')
-      cy.url().should('include', '/checklist')
-
-      // 비밀번호 변경 페이지로 이동
-      cy.visit('/password/change')
-
-      // 현재 비밀번호 입력
-      cy.get('[data-testid="current-password-input"]').type('password')
-      
-      // 새 비밀번호 입력
-      cy.get('[data-testid="new-password-input"]').type('NewStrongPass123!')
-      cy.get('[data-testid="confirm-password-input"]').type('NewStrongPass123!')
-      
-      // 비밀번호 변경 API 호출 모킹
-      cy.intercept('POST', '/api/auth/change-password', {
-        statusCode: 200,
-        body: {
-          message: '비밀번호가 성공적으로 변경되었습니다.'
-        }
-      }).as('changePasswordRequest')
-
-      // 변경 버튼 클릭
-      cy.get('[data-testid="change-password-button"]').click()
-
-      cy.wait('@changePasswordRequest')
-      cy.get('[data-testid="success-message"]').should('contain', '비밀번호가 성공적으로 변경되었습니다.')
-    })
-
-    it('잘못된 현재 비밀번호로 변경 시도 시 오류가 표시되어야 한다', () => {
-      // 로그인
-      cy.login('admin@example.com', 'password')
-      cy.visit('/password/change')
-
-      // 잘못된 현재 비밀번호 입력
-      cy.get('[data-testid="current-password-input"]').type('wrongpassword')
-      cy.get('[data-testid="new-password-input"]').type('NewStrongPass123!')
-      cy.get('[data-testid="confirm-password-input"]').type('NewStrongPass123!')
-
-      // API 오류 응답 모킹
-      cy.intercept('POST', '/api/auth/change-password', {
-        statusCode: 400,
-        body: {
-          error: '현재 비밀번호가 올바르지 않습니다.'
-        }
-      }).as('changePasswordError')
-
-      cy.get('[data-testid="change-password-button"]').click()
-
-      cy.wait('@changePasswordError')
-      cy.get('[data-testid="error-message"]').should('contain', '현재 비밀번호가 올바르지 않습니다.')
-    })
-
-    it('약한 새 비밀번호로 변경 시도 시 유효성 검사 오류가 표시되어야 한다', () => {
-      cy.login('admin@example.com', 'password')
-      cy.visit('/password/change')
-
-      // 약한 비밀번호 입력
-      cy.get('[data-testid="current-password-input"]').type('password')
-      cy.get('[data-testid="new-password-input"]').type('weak')
-      cy.get('[data-testid="confirm-password-input"]').type('weak')
-
-      cy.get('[data-testid="change-password-button"]').click()
-
-      cy.get('[data-testid="validation-error"]').should('contain', '비밀번호는 최소 8자 이상이어야 합니다')
-    })
-  })
-
-  describe('비밀번호 찾기', () => {
-    it('비밀번호 찾기 이메일 발송이 가능해야 한다', () => {
-      cy.visit('/password/forgot')
-
-      // 유효한 이메일 입력
-      cy.get('[data-testid="email-input"]').type('admin@example.com')
-
-      // 이메일 발송 API 호출 모킹
-      cy.intercept('POST', '/api/auth/forgot-password', {
-        statusCode: 200,
-        body: {
-          message: '비밀번호 재설정 이메일이 발송되었습니다.'
-        }
-      }).as('forgotPasswordRequest')
-
-      cy.get('[data-testid="send-email-button"]').click()
-
-      cy.wait('@forgotPasswordRequest')
-      cy.get('[data-testid="success-message"]').should('contain', '비밀번호 재설정 이메일이 발송되었습니다.')
-    })
-
-    it('존재하지 않는 이메일로 비밀번호 찾기 시도 시 오류가 표시되어야 한다', () => {
-      cy.visit('/password/forgot')
-
-      // 존재하지 않는 이메일 입력
-      cy.get('[data-testid="email-input"]').type('nonexistent@example.com')
-
-      // API 오류 응답 모킹
-      cy.intercept('POST', '/api/auth/forgot-password', {
-        statusCode: 404,
-        body: {
-          error: '해당 이메일로 등록된 사용자를 찾을 수 없습니다.'
-        }
-      }).as('forgotPasswordError')
-
-      cy.get('[data-testid="send-email-button"]').click()
-
-      cy.wait('@forgotPasswordError')
-      cy.get('[data-testid="error-message"]').should('contain', '해당 이메일로 등록된 사용자를 찾을 수 없습니다.')
-    })
-
-    it('잘못된 이메일 형식으로 입력 시 유효성 검사 오류가 표시되어야 한다', () => {
-      cy.visit('/password/forgot')
-
-      // 잘못된 이메일 형식 입력
-      cy.get('[data-testid="email-input"]').type('invalid-email')
-
-      cy.get('[data-testid="send-email-button"]').click()
-
-      cy.get('[data-testid="validation-error"]').should('contain', '올바른 이메일 주소를 입력해주세요')
-    })
-  })
-
-  describe('비밀번호 재설정', () => {
-    it('유효한 토큰으로 비밀번호 재설정이 가능해야 한다', () => {
-      // 유효한 토큰으로 재설정 페이지 방문
-      cy.visit('/password/reset?token=valid-token')
-
-      // 새 비밀번호 입력
-      cy.get('[data-testid="new-password-input"]').type('NewStrongPass123!')
-      cy.get('[data-testid="confirm-password-input"]').type('NewStrongPass123!')
-
-      // 재설정 API 호출 모킹
       cy.intercept('POST', '/api/auth/reset-password', {
         statusCode: 200,
-        body: {
-          message: '비밀번호가 성공적으로 재설정되었습니다.'
-        }
-      }).as('resetPasswordRequest')
+        body: { message: '비밀번호가 성공적으로 재설정되었습니다' }
+      });
 
-      cy.get('[data-testid="reset-password-button"]').click()
+      cy.visit('/password/reset?token=valid-token');
 
-      cy.wait('@resetPasswordRequest')
-      cy.get('[data-testid="success-message"]').should('contain', '비밀번호가 성공적으로 재설정되었습니다.')
-      
-      // 로그인 페이지로 리다이렉트 확인
-      cy.url().should('include', '/login')
-    })
+      // Wait for token validation
+      cy.contains('새 비밀번호 설정').should('be.visible');
 
-    it('유효하지 않은 토큰으로 재설정 시도 시 오류가 표시되어야 한다', () => {
-      cy.visit('/password/reset?token=invalid-token')
+      // Submit empty form
+      cy.get('button[type="submit"]').click();
+      cy.contains('새 비밀번호를 입력해주세요').should('be.visible');
+      cy.contains('새 비밀번호 확인을 입력해주세요').should('be.visible');
 
-      cy.get('[data-testid="new-password-input"]').type('NewStrongPass123!')
-      cy.get('[data-testid="confirm-password-input"]').type('NewStrongPass123!')
+      // Enter weak password
+      cy.get('input[name="newPassword"]').type('weak');
+      cy.get('button[type="submit"]').click();
+      cy.contains('비밀번호는 최소 8자 이상이어야 합니다').should('be.visible');
 
-      // API 오류 응답 모킹
+      // Enter mismatched passwords
+      cy.get('input[name="newPassword"]').clear().type('StrongPass123!');
+      cy.get('input[name="confirmPassword"]').type('DifferentPass123!');
+      cy.get('button[type="submit"]').click();
+      cy.contains('비밀번호가 일치하지 않습니다').should('be.visible');
+
+      // Enter valid passwords
+      cy.get('input[name="newPassword"]').clear().type('NewStrongPass123!');
+      cy.get('input[name="confirmPassword"]').clear().type('NewStrongPass123!');
+      cy.get('button[type="submit"]').click();
+
+      // Check success message
+      cy.contains('비밀번호 재설정 완료').should('be.visible');
+      cy.contains('비밀번호가 성공적으로 재설정되었습니다').should('be.visible');
+    });
+
+    it('should handle API error during reset', () => {
+      // Mock valid token but API error
+      cy.intercept('GET', '/api/auth/validate-reset-token*', {
+        statusCode: 200,
+        body: { valid: true, userId: '1' }
+      });
+
       cy.intercept('POST', '/api/auth/reset-password', {
         statusCode: 400,
-        body: {
-          error: '유효하지 않은 토큰입니다.'
-        }
-      }).as('resetPasswordError')
+        body: { error: '유효하지 않은 토큰입니다' }
+      });
 
-      cy.get('[data-testid="reset-password-button"]').click()
+      cy.visit('/password/reset?token=valid-token');
 
-      cy.wait('@resetPasswordError')
-      cy.get('[data-testid="error-message"]').should('contain', '유효하지 않은 토큰입니다.')
-    })
+      cy.contains('새 비밀번호 설정').should('be.visible');
 
-    it('만료된 토큰으로 재설정 시도 시 오류가 표시되어야 한다', () => {
-      cy.visit('/password/reset?token=expired-token')
+      cy.get('input[name="newPassword"]').type('NewStrongPass123!');
+      cy.get('input[name="confirmPassword"]').type('NewStrongPass123!');
+      cy.get('button[type="submit"]').click();
 
-      cy.get('[data-testid="new-password-input"]').type('NewStrongPass123!')
-      cy.get('[data-testid="confirm-password-input"]').type('NewStrongPass123!')
+      cy.contains('유효하지 않은 토큰입니다').should('be.visible');
+    });
+  });
 
-      // API 오류 응답 모킹
-      cy.intercept('POST', '/api/auth/reset-password', {
-        statusCode: 400,
-        body: {
-          error: '토큰이 만료되었습니다.'
-        }
-      }).as('resetPasswordExpired')
+  describe('Password Flow Integration', () => {
+    it('should complete full password reset flow', () => {
+      // 1. Start with forgot password
+      cy.visit('/password/forgot');
+      cy.get('input[name="username"]').type('admin');
+      cy.get('button[type="submit"]').click();
+      cy.contains('이메일 발송 완료').should('be.visible');
 
-      cy.get('[data-testid="reset-password-button"]').click()
+      // 2. Navigate to reset page (simulating email link)
+      cy.visit('/password/reset?token=test-token');
 
-      cy.wait('@resetPasswordExpired')
-      cy.get('[data-testid="error-message"]').should('contain', '토큰이 만료되었습니다.')
-    })
+      // 3. Complete password reset
+      cy.get('input[name="newPassword"]').type('NewPassword123!');
+      cy.get('input[name="confirmPassword"]').type('NewPassword123!');
+      cy.get('button[type="submit"]').click();
 
-    it('토큰이 없는 경우 오류가 표시되어야 한다', () => {
-      cy.visit('/password/reset')
+      // 4. Verify success
+      cy.contains('비밀번호 재설정 완료').should('be.visible');
 
-      cy.get('[data-testid="error-message"]').should('contain', '유효하지 않은 링크입니다.')
-    })
-  })
-
-  describe('토큰 검증', () => {
-    it('유효한 토큰 검증이 성공해야 한다', () => {
-      cy.intercept('GET', '/api/auth/validate-reset-token?token=valid-token', {
-        statusCode: 200,
-        body: {
-          valid: true
-        }
-      }).as('validateTokenSuccess')
-
-      cy.visit('/password/reset?token=valid-token')
-
-      cy.wait('@validateTokenSuccess')
-      cy.get('[data-testid="new-password-input"]').should('be.visible')
-    })
-
-    it('유효하지 않은 토큰 검증이 실패해야 한다', () => {
-      cy.intercept('GET', '/api/auth/validate-reset-token?token=invalid-token', {
-        statusCode: 200,
-        body: {
-          valid: false
-        }
-      }).as('validateTokenFailure')
-
-      cy.visit('/password/reset?token=invalid-token')
-
-      cy.wait('@validateTokenFailure')
-      cy.get('[data-testid="error-message"]').should('contain', '유효하지 않은 링크입니다.')
-    })
-  })
-
-  describe('접근 제어', () => {
-    it('인증되지 않은 사용자는 비밀번호 변경 페이지에 접근할 수 없어야 한다', () => {
-      cy.visit('/password/change')
-
-      // 로그인 페이지로 리다이렉트
-      cy.url().should('include', '/login')
-    })
-
-    it('비밀번호 찾기 페이지는 인증 없이 접근 가능해야 한다', () => {
-      cy.visit('/password/forgot')
-
-      cy.get('[data-testid="email-input"]').should('be.visible')
-      cy.get('[data-testid="send-email-button"]').should('be.visible')
-    })
-  })
-}) 
+      // 5. Navigate to login
+      cy.get('a[href="/login"]').click();
+      cy.url().should('include', '/login');
+    });
+  });
+}); 
