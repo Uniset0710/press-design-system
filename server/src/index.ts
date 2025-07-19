@@ -39,6 +39,11 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Health check 엔드포인트
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
+
 // 데이터베이스 연결
 AppDataSource.initialize()
   .then(() => {
