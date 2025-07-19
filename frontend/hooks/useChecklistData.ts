@@ -82,39 +82,21 @@ export function useChecklistData(selectedPartId: string, session: any, modelId?:
       .then((data: any) => {
         console.log('✅ 체크리스트 데이터 로드 성공:', data);
         
-        // 백엔드에서 받은 데이터를 섹션별로 분류
+        // 백엔드에서 이미 섹션별로 분류된 데이터를 그대로 사용
         const sectionedData: Record<string, ChecklistItem[]> = {
           'Design Check List': [],
           'Machining Check List': [],
           'Assembly Check List': [],
         };
 
-        // 데이터가 배열인 경우 섹션별로 분류
-        if (Array.isArray(data)) {
-          data.forEach((item: any) => {
-            let section = item.section;
-            if (!section || !['Design Check List', 'Machining Check List', 'Assembly Check List'].includes(section)) {
-              section = 'Design Check List';
-            }
-            sectionedData[section].push({
-              ...item,
-              optionType: item.optionType || 'DTL', // 기본값 설정
-            });
-          });
-        } else if (typeof data === 'object') {
-          // 옵션별(DTL, DTE 등)로 분리된 데이터를 섹션별로 합침
-          Object.entries(data).forEach(([optionType, arr]: [string, any]) => {
-            if (Array.isArray(arr)) {
-              arr.forEach((item: any) => {
-                let section = item.section;
-                if (!section || !['Design Check List', 'Machining Check List', 'Assembly Check List'].includes(section)) {
-                  section = 'Design Check List';
-                }
-                sectionedData[section].push({
-                  ...item,
-                  optionType: optionType, // 옵션 타입을 명시적으로 설정
-                });
-              });
+        // 백엔드에서 섹션별로 데이터를 반환하므로 직접 사용
+        if (typeof data === 'object' && data !== null) {
+          Object.entries(data).forEach(([section, items]: [string, any]) => {
+            if (Array.isArray(items)) {
+              sectionedData[section] = items.map((item: any) => ({
+                ...item,
+                optionType: item.optionType || 'DTL', // 기본값 설정
+              }));
             }
           });
         }

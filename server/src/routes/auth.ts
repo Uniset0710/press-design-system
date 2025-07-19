@@ -13,13 +13,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body as LoginRequest;
+  console.log('🔍 Login attempt for username:', username);
+  
   const userRepo = AppDataSource.getRepository(User);
   const user = await userRepo.findOneBy({ username });
+  
+  console.log('🔍 User found:', user ? 'Yes' : 'No');
+  if (user) {
+    console.log('🔍 User details:', {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      hasPassword: !!user.password
+    });
+  }
+  
   if (!user) {
+    console.log('❌ User not found');
     return res.status(401).json({ message: '사용자를 찾을 수 없습니다.' });
   }
+  
   const isValidPassword = await bcrypt.compare(password, user.password);
+  console.log('🔍 Password validation:', isValidPassword);
+  
   if (!isValidPassword) {
+    console.log('❌ Invalid password');
     return res.status(401).json({ message: '비밀번호가 일치하지 않습니다.' });
   }
   const token = jwt.sign(

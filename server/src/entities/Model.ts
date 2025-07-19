@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { ModelOption } from './ModelOption';
 
 @Entity()
 export class Model {
@@ -31,6 +33,10 @@ export class Model {
 
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt!: Date;
+
+  // ModelOption과의 관계 (기종 코드로 연결되므로 관계 제거)
+  // @OneToMany(() => ModelOption, option => option.model)
+  // options: ModelOption[];
 
   constructor(partial: Partial<Model> = {}) {
     Object.assign(this, partial);

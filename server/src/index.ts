@@ -11,6 +11,7 @@ import checklistRouter from './routes/checklist';
 import commentsRouter from './routes/comments';
 import modelsRouter from './routes/models';
 import optionsRouter from './routes/options';
+import modelOptionsRouter from './routes/modelOptions';
 import { authMiddleware } from './middleware/auth';
 
 // 환경변수 로드
@@ -35,7 +36,8 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 데이터베이스 연결
 AppDataSource.initialize()
@@ -54,6 +56,7 @@ app.use('/api/checklist', authMiddleware, checklistRouter);
 app.use('/api/comments', authMiddleware, commentsRouter);
 app.use('/api/models', modelsRouter);
 app.use('/api/options', authMiddleware, optionsRouter);
+app.use('/api/model-options', modelOptionsRouter);
 
 // 보호된 라우트 예시
 app.get('/api/protected', authMiddleware, (req, res) => {

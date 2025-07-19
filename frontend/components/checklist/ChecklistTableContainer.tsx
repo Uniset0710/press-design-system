@@ -35,8 +35,13 @@ const ChecklistTableContainer: React.FC<ChecklistTableContainerProps> = ({
 }) => {
   // selectedOptions에 따라 items 필터링
   const filteredItems = items.filter(item => {
-    // item.optionType이 selectedOptions에 포함되어 있으면 표시
-    return selectedOptions.includes(item.optionType);
+    // 다중 옵션 처리: 쉼표로 구분된 옵션들을 분리
+    const itemOptions = item.optionType ? item.optionType.split(',').map(opt => opt.trim()) : [];
+    
+    // selectedOptions 중 하나라도 itemOptions에 포함되어 있으면 표시
+    return selectedOptions.some(selectedOption => 
+      itemOptions.includes(selectedOption)
+    );
   });
 
   // 고급 필터링 로직 추가

@@ -36,14 +36,11 @@ router.get('/:partId', async (req: AuthRequest, res) => {
     require('../entities/Attachment').Attachment
   );
   
-  // Initialize groups
+  // Initialize groups dynamically based on actual optionTypes
   const result: Record<string, any[]> = {
-    DTL: [],
-    DTE: [],
-    DL: [],
-    DE: [],
-    '2P': [],
-    '4P': [],
+    'Design Check List': [],
+    'Machining Check List': [],
+    'Assembly Check List': [],
   };
   
   for (const item of items) {
@@ -56,11 +53,18 @@ router.get('/:partId', async (req: AuthRequest, res) => {
       filename: att.filename,
       mimeType: att.mimeType,
     }));
-    const key = item.optionType;
-    result[key].push({
+    
+    // 섹션별로 데이터 분류
+    const section = item.section || 'Design Check List';
+    if (!result[section]) {
+      result[section] = [];
+    }
+    
+    result[section].push({
       id: `${item.id}`,
       text: item.description,
       section: item.section,
+      optionType: item.optionType, // 옵션 타입 추가
       attachments: mappedAttachments,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,

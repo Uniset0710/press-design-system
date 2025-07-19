@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChecklistItem, AttachmentData } from '@/app/types/checklist';
 import { Part } from './TreeView';
 import ChecklistTableContainer from '../../components/checklist/ChecklistTableContainer';
@@ -14,6 +14,7 @@ import { toast } from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ItemToolbar from '../../components/checklist/ItemToolbar';
 import { getModelFromCookies } from '@/utils/cookieUtils';
+import { useModelOptions } from '@/hooks/useModelOptions';
 
 // 쿠키에서 모델 ID를 가져오는 함수
 const getCookie = (name: string): string | undefined => {
@@ -54,29 +55,61 @@ export default function MainChecklist({
   const [modalEditMode, setModalEditMode] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const sections = [
+  // 모델 정보 가져오기
+  const modelInfo = getModelFromCookies();
+
+  // 동적 옵션 로딩
+  const { options: designOptions, loading: designLoading } = useModelOptions(
+    modelInfo?.code || '',
+    'Design Check List'
+  );
+  const { options: machiningOptions, loading: machiningLoading } = useModelOptions(
+    modelInfo?.code || '',
+    'Machining Check List'
+  );
+  const { options: assemblyOptions, loading: assemblyLoading } = useModelOptions(
+    modelInfo?.code || '',
+    'Assembly Check List'
+  );
+
+  // 동적으로 sections 생성
+  const sections = useMemo(() => [
     {
       title: 'Design Check List',
-      options: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'],
+      options: designOptions.map(opt => opt.optionCode),
+      loading: designLoading
     },
     {
       title: 'Machining Check List',
-      options: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'],
+      options: machiningOptions.map(opt => opt.optionCode),
+      loading: machiningLoading
     },
     {
       title: 'Assembly Check List',
-      options: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'],
-    },
-  ];
+      options: assemblyOptions.map(opt => opt.optionCode),
+      loading: assemblyLoading
+    }
+  ], [designOptions, machiningOptions, assemblyOptions, designLoading, machiningLoading, assemblyLoading]);
 
-  const [selectedChecklistSection, setSelectedChecklistSection] = useState<string>(sections[0].title);
+  // 기본 옵션 (로딩 중이거나 옵션이 없을 때 사용)
+  const defaultOptions = ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'];
+
+  const [selectedChecklistSection, setSelectedChecklistSection] = useState<string>(sections[0]?.title || 'Design Check List');
   const [newChecklistText, setNewChecklistText] = useState<string>('');
   const [newChecklistOptions, setNewChecklistOptions] = useState<string[]>([]);
   const [newChecklistAuthor, setNewChecklistAuthor] = useState<string>('');
   const [newChecklistDueDate, setNewChecklistDueDate] = useState<string>('');
 
-  const options = ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'];
-  const [selectedOptions, setSelectedOptions] = useState<string[]>(options);
+  // 현재 섹션의 옵션들 (로딩 중이면 기본 옵션 사용)
+  const currentSectionOptions = useMemo(() => {
+    const currentSection = sections.find(s => s.title === selectedChecklistSection);
+    if (currentSection?.loading || !currentSection?.options.length) {
+      return defaultOptions;
+    }
+    return currentSection.options;
+  }, [sections, selectedChecklistSection]);
+
+  const [selectedOptions, setSelectedOptions] = useState<string[]>(currentSectionOptions);
   const [sectionFilters, setSectionFilters] = useState<Record<string, string>>({});
   const [sectionSort, setSectionSort] = useState<
     Record<
@@ -106,6 +139,19 @@ export default function MainChecklist({
     setCurrentSectionIndex(0);
   }, [selectedPartId]);
 
+  // 현재 섹션이 변경되면 selectedOptions 업데이트
+  useEffect(() => {
+    setSelectedOptions(currentSectionOptions);
+  }, [currentSectionOptions]);
+
+  // 섹션 인덱스가 변경되면 selectedChecklistSection도 업데이트
+  useEffect(() => {
+    const currentSection = sections[currentSectionIndex];
+    if (currentSection) {
+      setSelectedChecklistSection(currentSection.title);
+    }
+  }, [currentSectionIndex, sections]);
+
   const [sectionInput, setSectionInput] = useState<
     Record<
       string,
@@ -123,30 +169,31 @@ export default function MainChecklist({
 
   // 현재 섹션의 입력 상태를 가져오는 함수
   const getCurrentSectionInput = () => {
-    return sectionInput[sections[currentSectionIndex].title] || {
+    const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
+    return sectionInput[currentSectionTitle] || {
       text: '', author: '', dueDate: '', options: [], category: '', priority: ''
     };
   };
 
   // 현재 섹션의 allSelected 상태
-  const allSelected = options.every(opt => getCurrentSectionInput().options.includes(opt));
+  const allSelected = currentSectionOptions.every(opt => getCurrentSectionInput().options.includes(opt));
   
   const handleToggleAll = () => {
     const currentInput = getCurrentSectionInput();
-    const newOptions = allSelected ? [] : options;
+    const newOptions = allSelected ? [] : currentSectionOptions;
+    const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
     setSectionInput(prev => ({
       ...prev,
-      [sections[currentSectionIndex].title]: {
+      [currentSectionTitle]: {
         ...currentInput,
         options: newOptions,
       },
     }));
   };
 
-  const allOptions = ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'];
-  const allOptionsSelected = allOptions.every(opt => selectedOptions.includes(opt));
+  const allOptionsSelected = currentSectionOptions.every(opt => selectedOptions.includes(opt));
   const handleToggleAllOptions = () => {
-    setSelectedOptions(allOptionsSelected ? [] : allOptions);
+    setSelectedOptions(allOptionsSelected ? [] : currentSectionOptions);
   };
 
   const handleSort = (
@@ -200,7 +247,11 @@ export default function MainChecklist({
   };
 
   const handleAddChecklistWithSection = async (sectionTitle: string) => {
-    const input = getCurrentSectionInput(); // 현재 섹션의 입력 데이터 사용
+    // 전달된 섹션의 입력 데이터를 사용
+    const input = sectionInput[sectionTitle] || {
+      text: '', author: '', dueDate: '', options: [], category: '', priority: ''
+    };
+    
     if (!input?.text.trim() || !selectedPart) return;
 
     try {
@@ -211,6 +262,9 @@ export default function MainChecklist({
         ? `/api/checklist/${selectedPart.id}?modelId=${modelCode}`
         : `/api/checklist/${selectedPart.id}`;
         
+      // 다중 옵션을 쉼표로 구분하여 전송
+      const optionTypes = input.options.length > 0 ? input.options.join(',') : 'DTL';
+        
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -218,7 +272,7 @@ export default function MainChecklist({
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
         body: JSON.stringify({
-          optionType: input.options[0] || 'DTL',
+          optionType: optionTypes, // 다중 옵션 지원
           description: input.text,
           section: sectionTitle,
           author: input.author || session?.user?.name || 'Unknown',
@@ -236,7 +290,6 @@ export default function MainChecklist({
       const newItem = await response.json();
       
       // 새 아이템을 해당 섹션에 추가
-      const optionType = input.options[0] || 'DTL';
       setChecklistData((prev: Record<string, ChecklistItem[]>) => {
         const updated: Record<string, ChecklistItem[]> = { ...prev };
         // 섹션별로 분리된 데이터 구조에 맞게 추가
@@ -247,15 +300,15 @@ export default function MainChecklist({
         updated[sectionKey] = [...updated[sectionKey], {
           ...newItem,
           text: newItem.text || newItem.description,
-          optionType: optionType
+          optionType: optionTypes
         }];
         return updated;
       });
 
-      // 입력 필드 초기화
-      setSectionInput((prev: Record<string, any>) => ({
+      // 입력 폼 초기화
+      setSectionInput(prev => ({
         ...prev,
-        [sections[currentSectionIndex].title]: {
+        [sectionTitle]: {
           text: '',
           author: '',
           dueDate: '',
@@ -265,80 +318,67 @@ export default function MainChecklist({
         },
       }));
 
-      toast.success('Checklist item added successfully');
+      toast.success('체크리스트 항목이 추가되었습니다.');
     } catch (error) {
-      console.error('Error adding checklist item:', error);
-      toast.error('Failed to add checklist item');
+      console.error('체크리스트 추가 오류:', error);
+      toast.error('체크리스트 항목 추가에 실패했습니다.');
     }
   };
 
-  const handleStartEdit = (id: string) => {
-    const item = Object.values(checklistData)
-      .flat()
-      .find(item => item.id === id);
+  const handleStartEdit = (itemId: string) => {
+    const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
+    const items = checklistData[currentSectionTitle] || [];
+    const item = items.find(item => item.id === itemId);
     if (item) {
       setModalItem(item);
-      setModalEditMode(false); // 상세 보기 모드로 시작
+      setModalEditMode(false); // 상세보기 모드로 열기
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleModalClose = () => {
     setModalItem(null);
     setModalEditMode(false);
     setImagePreview(null);
   };
 
-  const handleEditChecklist = async (
-    itemId: string,
-    newText: string,
-    newAuthor?: string,
-    newDueDate?: string,
-    newCategory?: string,
-    newPriority?: string
-  ): Promise<void> => {
+  const handleModalSave = async (updatedItem: ChecklistItem) => {
+    if (!selectedPart) return;
+
     try {
-      const response = await fetch(`/api/checklist/${itemId}`, {
+      // 첨부파일 데이터를 제외하고 체크리스트 데이터만 전송
+      const { attachments, ...checklistData } = updatedItem;
+      
+      const response = await fetch(`/api/checklist/${updatedItem.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
         },
-        body: JSON.stringify({
-          text: newText,
-          author: newAuthor,
-          dueDate: newDueDate,
-          category: newCategory,
-          priority: newPriority,
-        }),
+        body: JSON.stringify(checklistData),
       });
 
       if (!response.ok) {
         throw new Error('Failed to update checklist item');
       }
 
-      const updatedItem = await response.json();
+      const updatedData = await response.json();
+      
       setChecklistData((prev: Record<string, ChecklistItem[]>) => {
-        const newData: Record<string, ChecklistItem[]> = { ...prev };
-        Object.keys(newData).forEach(section => {
-          newData[section] = newData[section].map((item: ChecklistItem) =>
-            item.id === itemId ? {
-              ...item,
-              text: updatedItem.text || updatedItem.description,
-              author: updatedItem.author,
-              dueDate: updatedItem.dueDate,
-              category: updatedItem.category,
-              priority: updatedItem.priority,
-              updatedAt: updatedItem.updatedAt
-            } : item
+        const updated: Record<string, ChecklistItem[]> = { ...prev };
+        const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
+        if (updated[currentSectionTitle]) {
+          updated[currentSectionTitle] = updated[currentSectionTitle].map(item =>
+            item.id === updatedItem.id ? { ...item, ...updatedData } : item
           );
-        });
-        return newData;
+        }
+        return updated;
       });
 
-      toast.success('Checklist item updated successfully');
+      handleModalClose();
+      toast.success('체크리스트 항목이 수정되었습니다.');
     } catch (error) {
-      console.error('Error updating checklist item:', error);
-      toast.error('Failed to update checklist item');
+      console.error('체크리스트 수정 오류:', error);
+      toast.error('체크리스트 항목 수정에 실패했습니다.');
     }
   };
 
@@ -408,23 +448,23 @@ export default function MainChecklist({
     document.body.removeChild(link);
   }
 
-  function exportToXLSX(sectionTitle: string, items: ChecklistItem[]) {
-    const worksheet = XLSX.utils.json_to_sheet(
-      items.map(item => ({
-        Text: item.text,
-        Author: item.author || '',
-        'Due Date': item.dueDate || '',
-        Category: item.category || '',
-        Priority: item.priority || '',
-        Status: item.completed ? 'Completed' : 'Pending',
-        'Created At': item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '',
-      }))
-    );
+  const exportToXLSX = () => {
+    const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
+    const items = checklistData[currentSectionTitle] || [];
+    
+    if (items.length === 0) {
+      toast.error('내보낼 데이터가 없습니다.');
+      return;
+    }
 
+    const worksheet = XLSX.utils.json_to_sheet(items);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, sectionTitle);
-    XLSX.writeFile(workbook, `${sectionTitle}_${selectedPart?.name || 'checklist'}.xlsx`);
-  }
+    XLSX.utils.book_append_sheet(workbook, worksheet, currentSectionTitle);
+    
+    const fileName = `${selectedPart?.name || 'checklist'}_${currentSectionTitle.replace(/\s+/g, '_')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    toast.success('엑셀 파일이 다운로드되었습니다.');
+  };
 
   // selectedPart가 없으면 안내 메시지
   if (!selectedPart) {
@@ -437,6 +477,19 @@ export default function MainChecklist({
           <p className="text-gray-500">
             Choose a part from the tree to view its checklist
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 옵션 로딩 중일 때 로딩 표시
+  const isLoading = designLoading || machiningLoading || assemblyLoading;
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">옵션을 불러오는 중...</p>
         </div>
       </div>
     );
@@ -464,8 +517,8 @@ export default function MainChecklist({
         <ChecklistInputForm
           currentInput={currentInput}
           setCurrentInput={setCurrentInput}
-          onAdd={() => handleAddChecklistWithSection(selectedChecklistSection)}
-          options={options}
+          onAdd={() => handleAddChecklistWithSection(sections[currentSectionIndex]?.title || 'Design Check List')}
+          options={currentSectionOptions}
           allSelected={allSelected}
           handleToggleAll={handleToggleAll}
           sections={sections}
@@ -477,7 +530,7 @@ export default function MainChecklist({
       {/* 옵션 탭 */}
       <div className="flex flex-row items-center gap-2 px-4 py-2 border-b border-gray-100">
         <span className="font-medium">Options:</span>
-        {options.map(opt => (
+        {currentSectionOptions.map(opt => (
           <label key={opt} className="inline-flex items-center mr-2">
             <input
               type="checkbox"
@@ -511,6 +564,9 @@ export default function MainChecklist({
             style={{ borderRadius: idx === 0 ? '8px 0 0 0' : idx === sections.length - 1 ? '0 8px 0 0' : '0' }}
           >
             {section.title}
+            {section.loading && (
+              <span className="ml-2 inline-block w-3 h-3 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></span>
+            )}
           </button>
         ))}
       </div>
@@ -521,9 +577,9 @@ export default function MainChecklist({
           {/* 필터바 추가 */}
           <div className="px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8 mb-2">
             <ChecklistFilterBar
-              sectionTitle={sections[currentSectionIndex].title}
-              filterValue={sectionFilters[sections[currentSectionIndex].title] || ''}
-              advFilter={sectionAdvancedFilters[sections[currentSectionIndex].title] || {
+              sectionTitle={sections[currentSectionIndex]?.title || 'Design Check List'}
+              filterValue={sectionFilters[sections[currentSectionIndex]?.title || 'Design Check List'] || ''}
+              advFilter={sectionAdvancedFilters[sections[currentSectionIndex]?.title || 'Design Check List'] || {
                 author: '',
                 startDate: '',
                 endDate: '',
@@ -531,28 +587,28 @@ export default function MainChecklist({
                 priority: ''
               }}
               authors={Array.from(new Set(
-                (checklistData[sections[currentSectionIndex].title] || [])
+                (checklistData[sections[currentSectionIndex]?.title || 'Design Check List'] || [])
                   .map(item => item.author)
                   .filter((author): author is string => Boolean(author))
               ))}
               onFilterChange={(value) => {
                 setSectionFilters(prev => ({
                   ...prev,
-                  [sections[currentSectionIndex].title]: value
+                  [sections[currentSectionIndex]?.title || 'Design Check List']: value
                 }));
               }}
               onAdvancedFilterChange={(filter) => {
                 setSectionAdvancedFilters(prev => ({
                   ...prev,
-                  [sections[currentSectionIndex].title]: filter
+                  [sections[currentSectionIndex]?.title || 'Design Check List']: filter
                 }));
               }}
             />
           </div>
           
           <ChecklistTableContainer
-            items={checklistData[sections[currentSectionIndex].title] || []}
-            sectionTitle={sections[currentSectionIndex].title}
+            items={checklistData[sections[currentSectionIndex]?.title || 'Design Check List'] || []}
+            sectionTitle={sections[currentSectionIndex]?.title || 'Design Check List'}
             selectedOptions={selectedOptions}
             sectionFilters={sectionFilters}
             sectionAdvancedFilters={sectionAdvancedFilters}
@@ -608,22 +664,53 @@ export default function MainChecklist({
           modalItem={modalItem}
           modalEditMode={modalEditMode}
           imagePreview={imagePreview}
-          onClose={handleCancelEdit}
+          onClose={handleModalClose}
           onEditModeToggle={() => setModalEditMode(!modalEditMode)}
           onSave={async () => {
             if (modalItem) {
-              await handleEditChecklist(
-                modalItem.id,
-                modalItem.text || modalItem.description || '',
-                modalItem.author,
-                modalItem.dueDate,
-                (modalItem as any).category,
-                (modalItem as any).priority
-              );
-              setModalEditMode(false);
+              await handleModalSave(modalItem);
             }
           }}
-          onDelete={() => handleDeleteItem(modalItem.id)}
+          onDelete={async () => {
+            if (modalItem) {
+              try {
+                const response = await fetch(`/api/checklist/${modalItem.id}`, {
+                  method: 'DELETE',
+                  headers: {
+                    ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                  toast.success('체크리스트 항목이 삭제되었습니다.');
+                  
+                  // 로컬 상태에서 삭제된 항목 제거
+                  setChecklistData(prev => {
+                    const updated = { ...prev };
+                    Object.keys(updated).forEach(section => {
+                      updated[section] = updated[section].filter(item => item.id !== modalItem.id);
+                    });
+                    return updated;
+                  });
+                  
+                  // 모달 닫기
+                  handleModalClose();
+                } else {
+                  toast.error('삭제에 실패했습니다.');
+                }
+              } catch (error) {
+                console.error('Delete error:', error);
+                toast.error('삭제 중 오류가 발생했습니다.');
+              }
+            }
+          }}
           onItemChange={(updatedItem) => setModalItem(updatedItem)}
           onFileUpload={(file) => onFileUpload(file, modalItem)}
           onDeleteAttachment={onDeleteAttachment}

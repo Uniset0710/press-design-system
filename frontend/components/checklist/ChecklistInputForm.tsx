@@ -66,6 +66,9 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
     label: section.title,
   }));
 
+  // 현재 섹션의 제목
+  const currentSectionTitle = sections[currentSectionIndex]?.title || 'Design Check List';
+
   return (
     <div
       className='mb-6 p-4 bg-white rounded shadow'
@@ -78,7 +81,7 @@ const ChecklistInputForm: React.FC<ChecklistInputFormProps> = ({
         <label className='block font-medium mb-1' htmlFor="section-select">섹션 선택</label>
         <Select
           id="section-select"
-          value={currentInput.section || sections[currentSectionIndex]?.title || ''}
+          value={currentInput.section || currentSectionTitle}
           onChange={e => setCurrentInput({ section: e.target.value })}
           options={sectionOptions}
           aria-label="섹션을 선택하세요"

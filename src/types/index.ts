@@ -14,7 +14,7 @@ export interface TreeNode {
 export interface ChecklistItem {
   id: number;
   partId: number;
-  optionType: 'DTL' | 'DTE' | 'DL' | 'DE' | '2P' | '4P';
+  optionType: string;
   description: string;
   imageUrl?: string;
   createdAt: string;

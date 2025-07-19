@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Model, Option, CreateModelRequest, UpdateModelRequest, CreateOptionRequest, UpdateOptionRequest } from '../types/model';
 import { modelApi, optionApi } from '../lib/modelApi';
+import { ModelOption } from '@/types/modelOption';
+import { getModelOptions } from '@/lib/modelOptionApi';
 
 export const useModels = () => {
   const [models, setModels] = useState<Model[]>([]);
@@ -137,4 +139,38 @@ export const useOptions = (modelId: string) => {
     deleteOption,
     reorderOptions,
   };
+};
+
+export const useModelOptions = (modelId: string, section?: string) => {
+  const [options, setOptions] = useState<ModelOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchOptions = useCallback(async () => {
+    if (!modelId) {
+      setOptions([]);
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching options for modelId:', modelId, 'section:', section);
+      const data = await getModelOptions(modelId, section);
+      console.log('Received options data:', data);
+      setOptions(data);
+    } catch (err) {
+      console.error('Error fetching options:', err);
+      setError(err instanceof Error ? err.message : '옵션을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [modelId, section]);
+  
+  useEffect(() => {
+    fetchOptions();
+  }, [fetchOptions]);
+  
+  return { options, loading, error, refetch: fetchOptions };
 }; 

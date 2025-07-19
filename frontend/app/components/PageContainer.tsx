@@ -309,8 +309,11 @@ export default function PageContainer() {
       formData.append('file', file);
       formData.append('checklistItemId', item.id);
 
-      const response = await fetch('/api/attachments', {
+      const response = await fetch(`/api/attachments/${item.id}`, {
         method: 'POST',
+        headers: {
+          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+        },
         body: formData,
       });
 
@@ -318,11 +321,30 @@ export default function PageContainer() {
         throw new Error('Failed to upload file');
       }
 
-      const attachment = await response.json();
+      const attachments = await response.json();
+      
+      // attachmentsCache 업데이트
       setAttachmentsCache(prev => ({
         ...prev,
-        [item.id]: [...(prev[item.id] || []), attachment],
+        [item.id]: attachments,
       }));
+
+      // 체크리스트 데이터도 업데이트하여 실시간 반영
+      setChecklistData(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(section => {
+          updated[section] = updated[section].map(checklistItem => {
+            if (checklistItem.id === item.id) {
+              return {
+                ...checklistItem,
+                attachments: attachments,
+              };
+            }
+            return checklistItem;
+          });
+        });
+        return updated;
+      });
 
       toast.success('File uploaded successfully');
     } catch (error) {
@@ -335,12 +357,16 @@ export default function PageContainer() {
     try {
       const response = await fetch(`/api/attachments/${attachmentId}`, {
         method: 'DELETE',
+        headers: {
+          ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
+        },
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete attachment');
       }
 
+      // attachmentsCache 업데이트
       setAttachmentsCache(prev => {
         const newCache = { ...prev };
         Object.keys(newCache).forEach(itemId => {
@@ -349,6 +375,22 @@ export default function PageContainer() {
           );
         });
         return newCache;
+      });
+
+      // 체크리스트 데이터도 업데이트하여 실시간 반영
+      setChecklistData(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(section => {
+          updated[section] = updated[section].map(checklistItem => {
+            return {
+              ...checklistItem,
+              attachments: checklistItem.attachments?.filter(
+                att => att.id !== attachmentId
+              ) || [],
+            };
+          });
+        });
+        return updated;
       });
 
       toast.success('Attachment deleted successfully');

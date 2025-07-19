@@ -25,9 +25,8 @@ export class ChecklistItem {
 
   @Column({
     type: 'varchar',
-    enum: ['DTL', 'DTE', 'DL', 'DE', '2P', '4P'],
   })
-  optionType!: 'DTL' | 'DTE' | 'DL' | 'DE' | '2P' | '4P';
+  optionType!: string;
 
   @Column()
   description!: string;
