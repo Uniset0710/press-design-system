@@ -23,11 +23,19 @@
   "scripts": {
     "server": "ts-node -r tsconfig-paths/register server/src/index.ts",
     "dev": "concurrently \"npm run server\" \"cd frontend && npm run dev\"",
+    "build": "npm run build:server && npm run build:frontend",
+    "build:server": "cd server && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "cd server && npm start",
+    "start:frontend": "cd frontend && npm start",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "migrate": "cd server && npm run migration:run",
+    "migrate:generate": "cd server && npm run migration:generate",
+    "seed": "cd server && npm run seed"
   },
   "eslintConfig": {
     "extends": [
