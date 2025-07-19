@@ -1,11 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { validatePassword } from '@/utils/security';
 
-export default function PasswordResetPage() {
+function PasswordResetPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -276,5 +277,13 @@ export default function PasswordResetPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PasswordResetPage() {
+  return (
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <PasswordResetPageContent />
+    </Suspense>
   );
 } 

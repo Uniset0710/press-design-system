@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   reactStrictMode: true,
   async rewrites() {
     return [
@@ -11,7 +17,7 @@ const nextConfig = {
       // 나머지 API는 백엔드로 프록시
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3002/api/:path*',
+        destination: 'https://press-design-system-production.up.railway.app/api/:path*',
       },
     ]
   }

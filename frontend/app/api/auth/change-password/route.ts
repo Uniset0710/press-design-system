@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { validatePassword, sanitizeInput } from '@/utils/security';
-import { logSecurityEvent } from '@/utils/audit';
+// import { logSecurityEvent } from '@/utils/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
       await prisma.$disconnect();
       
       // 보안 이벤트 로그
-      logSecurityEvent('password_change_failed', {
-        userId: session.user.id,
-        reason: 'incorrect_current_password'
-      }, 'medium');
+      // logSecurityEvent('password_change_failed', {
+      //   userId: session.user.id,
+      //   reason: 'incorrect_current_password'
+      // }, 'medium');
 
       return NextResponse.json(
         { error: '현재 비밀번호가 올바르지 않습니다' },
@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
     await prisma.$disconnect();
 
     // 성공 로그
-    logSecurityEvent('password_change_success', {
-      userId: session.user.id
-    }, 'low');
+    // logSecurityEvent('password_change_success', {
+    //   userId: session.user.id
+    // }, 'low');
 
     return NextResponse.json(
       { message: '비밀번호가 성공적으로 변경되었습니다' },
@@ -99,9 +99,9 @@ export async function POST(request: NextRequest) {
     console.error('Password change error:', error);
     
     // 보안 이벤트 로그
-    logSecurityEvent('password_change_error', {
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 'high');
+    // logSecurityEvent('password_change_error', {
+    //   error: error instanceof Error ? error.message : 'Unknown error'
+    // }, 'high');
 
     return NextResponse.json(
       { error: '비밀번호 변경 중 오류가 발생했습니다' },

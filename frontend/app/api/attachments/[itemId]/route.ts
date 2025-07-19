@@ -34,18 +34,22 @@ async function proxy(request: NextRequest, method: string, url: string) {
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { itemId: string } }) {
-  return proxy(request, 'GET', `${BACKEND}/api/attachments/${params.itemId}`);
+export async function GET(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+  const { itemId } = await params;
+  return proxy(request, 'GET', `${BACKEND}/api/attachments/${itemId}`);
 }
 
-export async function POST(request: NextRequest, { params }: { params: { itemId: string } }) {
-  return proxy(request, 'POST', `${BACKEND}/api/attachments/${params.itemId}`);
+export async function POST(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+  const { itemId } = await params;
+  return proxy(request, 'POST', `${BACKEND}/api/attachments/${itemId}`);
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { itemId: string } }) {
-  return proxy(request, 'PUT', `${BACKEND}/api/attachments/${params.itemId}`);
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+  const { itemId } = await params;
+  return proxy(request, 'PUT', `${BACKEND}/api/attachments/${itemId}`);
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { itemId: string } }) {
-  return proxy(request, 'DELETE', `${BACKEND}/api/attachments/${params.itemId}`);
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+  const { itemId } = await params;
+  return proxy(request, 'DELETE', `${BACKEND}/api/attachments/${itemId}`);
 } 
